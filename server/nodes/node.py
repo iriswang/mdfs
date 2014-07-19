@@ -1,7 +1,7 @@
 class Node:
 
-    def get_chunk(self, id):
+    def get_chunk_data(self, chunk):
         raise NotImplementedError
 
-    def put_chunk(self, chunk, id):
+    def put_chunk_data(self, data, id):
         raise NotImplementedError
