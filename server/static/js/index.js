@@ -4,14 +4,18 @@ $(document).ready(function() {
 	var formatAccessToken = function(service, accessToken) {
 		return {'access_token': accessToken, 'service': service};
 	}
-	
+
 	var postAccessToken = function(service, accessToken, callback) {
 		data = formatAccessToken('soundcloud', accessToken);
 		$.post( "/initialize", function(data) {
 			if (callback) {
-				callback();
+				callback(data);
 			}
 		});
+	}
+
+	var accessTokenCallback = function(json){
+		console.log(json);
 	}
 
 	var DROPBOX_APP_KEY = "lrbb9ssu70c3qdb";
@@ -37,7 +41,7 @@ $(document).ready(function() {
 	if (client.isAuthenticated()) {
 		var dropboxAccessToken = client._credentials.token;
 		console.log(dropboxAccessToken);
-		postAccessToken('dropbox', dropboxAccessToken);
+		postAccessToken('dropbox', dropboxAccessToken, accessTokenCallback);
 	    // Client is authenticated. Display UI.
 	}
 
@@ -47,7 +51,7 @@ $(document).ready(function() {
 		SC.connect(function() {
 		    SC.get('/me', function(me) { 
 		      	var soundcloudAccessToken = SC.accessToken();
-		      	postAccessToken('soundcloud', soundcloudAccessToken);
+		      	postAccessToken('soundcloud', soundcloudAccessToken, accessTokenCallback);
 		    });
 		});
 	}
