@@ -2,6 +2,7 @@ import random
 
 from node import Node
 from fb import FBNode
+from drop import DBNode
 from imgur import ImgurNode
 from chunk import Chunk
 from redis import Redis
@@ -18,10 +19,10 @@ def weighted_choice(choices):
       upto += w
    assert False, "Shouldn't get here"
 
-SERVICES = [('facebook', 6206), ('imgur', 2000)]
+SERVICES = [('facebook', 6206), ('dropbox', 2000)]
 SERVICE_MAP = {
     'facebook': FBNode,
-    'imgur': ImgurNode
+    'dropbox': DBNode
 }
 
 def get_nodes(chunk, access_token, n=2):
