@@ -1,10 +1,11 @@
 """
 MDFS
 """
-
+from flask import render_template
 from flask import Flask, request, jsonify
 from auth import Authenticator
 from functools import wraps
+app = Flask(__name__, static_url_path='')
 
 # Arg parameters
 TOKEN = "token"
@@ -22,8 +23,12 @@ ERROR_MESSAGE = "Error message: {error}"
 USERNAME = "username"
 PASSWORD = "password"
 
-app = Flask(__name__)
 app.authenticator = Authenticator()
+
+
+@app.route("/")
+def index():
+    return render_template('index.html')
 
 
 def requires_authentication(f):
@@ -33,10 +38,9 @@ def requires_authentication(f):
         if TOKEN in req_args.keys():
             if app.authenticator.check_token(req_args[TOKEN]):
                 return f(*args, **kwargs)
-        else:
-            return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-                            JSON_ERROR: ERROR_MESSAGE.
-                            format(error="Missing token or invalid token")})
+        return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+                        JSON_ERROR: ERROR_MESSAGE.
+                        format(error="Missing token or invalid token")})
     return decorated
 
 
