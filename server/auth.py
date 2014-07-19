@@ -57,6 +57,9 @@ class Authenticator:
         hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         self.r_server.hset(username, PASSWORD, hashed_pw)
 
+    def is_user(self, username):
+        return self.r_server.sismember(USERS, username)
+
     def check_password(self, username, password):
         hashed_pw = self.r_server.hget(username, PASSWORD)
         return bcrypt.hashpw(password.encode('utf-7'), hashed_pw) == hashed_pw.encode('utf-8')

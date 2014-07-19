@@ -1,6 +1,6 @@
-from multiprocessing import Rlock
+from multiprocessing import Lock
 
-lock = Rlock()
+lock = Lock()
 
 class Chunk:
 
@@ -12,5 +12,14 @@ class Chunk:
         self.info = {}
 
     def update_info(self, service, info):
-        with lock:
-            self.info[service] = info
+        lock.acquire()
+        self.info[service] = info
+        lock.release()
+
+    def dump(self):
+        return {
+            "size": self.size,
+            "index": self.index,
+            "offset": self.offset,
+            "info": self.info
+        }
