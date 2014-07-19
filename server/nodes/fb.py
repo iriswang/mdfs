@@ -3,24 +3,33 @@ import requests
 import base64
 import logging
 
+import multiprocessing as mp
+import logging
+logger = mp.log_to_stderr()
 logging.basicConfig(level=logging.DEBUG)
+
 
 class FBNode(Node):
 
     BASE_URL="https://graph.facebook.com"
 
-    def __init__(self, access_token, redis):
-        Node.__init__(self, access_token, redis)
+    def __init__(self, access_token):
+        Node.__init__(self, access_token)
 
     def put_chunk_data(self, chunk):
-        access_token = "CAACEdEose0cBAIrfJeCzr8ddc4fhbXgTJZCxkzTPV6qMxLeEZCO8ZBXVp3VoFQxINaIfRkp6eMl3ZBaSO8Mba7gmbipE8m3A7RwjIdtBZC3rzRn5ZCcvmHwPv8g4BsSXWSHfuyIj50vK87XZAbec9zlt6HGVuy4K1PNNZAYgJe1oC9S3XsIQBN5z5Npl0db2iIkee6loIFFQhxuxaJbN821A"
+        access_token = "CAACEdEose0cBAAi9N7wuZB4XhThmntkrStMdmlzwG10RXZC91uqn0kZBX7ZBiahKfqF5jYT486dWrKjAaqvSSD1oZAuhFn1AY6iBrZCZBe7SK5F76LuSSBh3cqLvTQzoud60HQm88n0uegg0ZAUMZBnbAJCTL5BVpzvTLfvKFMAqU9VhOZA5ECyLYx11LkGSxD3rut48GRwOExLcCUmleyQZCtH"
+        album_id = '782294235156428'
         privacy = "{'value': 'SELF'}"
-        result = requests.post(self.BASE_URL+"/me/feed", params={
+        data = open('nodes/img/photo.jpg', 'rb')
+        result = requests.post(self.BASE_URL+"/%s/photos" % album_id, params={
             'access_token': access_token
+        }, files={
+            "source": data
         }, data={
-            "message": base64.b64encode(chunk.data)
+            "message": base64.b64encode(chunk.data),
+            "no_store": 'true'
         })
-        self.update_info('facebook', {
-            "type": 'post',
+        chunk.update_info('facebook', {
+            "type": 'image',
             "id": result.json()['id']
         })
