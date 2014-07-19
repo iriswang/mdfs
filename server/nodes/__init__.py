@@ -4,6 +4,9 @@ from node import Node
 from fb import FBNode
 from imgur import ImgurNode
 from chunk import Chunk
+from redis import Redis
+
+redis_client = Redis(db=1)
 
 def weighted_choice(choices):
    total = sum(w for c, w in choices)
@@ -28,5 +31,5 @@ def get_nodes(chunk, access_token, n=2):
         service = weighted_choice(SERVICES)
         if service not in services:
             services.add(service)
-            nodes.append(SERVICE_MAP[service](access_token))
+            nodes.append(SERVICE_MAP[service](access_token, redis_client))
     return nodes
