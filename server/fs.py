@@ -20,19 +20,16 @@ class FileSystem:
         self.session = sessionmaker(bind=self.engine)
         self.r_server = Redis(db=DB_NUM)
 
-    def create(self, path, root_inode_id, root_inode_id, mode=None):
+    def create(self, path, root_inode_id, mode=None):
         session = self.session()
         split_path = os.path.split(path)
         parent_inode = self.get_inode(split_path[0], root_inode_id)
         new_name = split_path[1]
         try:
-            if parent_inode is None:
-                new_inode = INode(name=new_name)
+            if parent_inode.is_dir:
+                new_inode = INode(name=new_name, parent_inode=parent_inode.id)
             else:
-                if parent_inode.is_dir:
-                    new_inode = INode(name=new_name, parent_inode=parent_inode.id)
-                else:
-                    raise Exception("Parent is not a directory")
+                raise Exception("Parent is not a directory")
             session.add(new_inode)
             session.commit()
             self.r_server.set("inode_"+str(new_inode.id), json.dumps([]))
@@ -48,13 +45,10 @@ class FileSystem:
         parent_inode = self.get_inode(split_path[0], root_inode_id)
         new_inode = split_path[1]
         try:
-            if parent_inode is None:
-                new_inode = INode(is_dir=True, name=new_inode)
+            if parent_inode.is_dir:
+                new_inode = INode(is_dir=True, name=new_inode, parent_inode=parent_inode.id)
             else:
-                if parent_inode.is_dir:
-                    new_inode = INode(is_dir=True, name=new_inode, parent_inode=parent_inode.id)
-                else:
-                    raise Exception("parent is not a directory")
+                raise Exception("parent is not a directory")
             session.add(new_inode)
             session.commit()
         finally:
@@ -87,12 +81,9 @@ class FileSystem:
         session = self.session()
         folder_path = self.get_inode(path, root_inode_id)
         try:
-            if folder_path is None:
-                files = session.query(INode).filter_by(parent_inode=None)
-            else:
-                if not folder_path.is_dir:
-                    raise Exception("Not a directory")
-                files = session.query(INode).filter_by(parent_inode=folder_path.id)
+            if not folder_path.is_dir:
+                raise Exception("Not a directory")
+            files = session.query(INode).filter_by(parent_inode=folder_path.id)
             for file_obj in files:
                 if file_obj.is_dir:
                     result.append(file_obj.name + "/")
@@ -109,13 +100,10 @@ class FileSystem:
         new_split_path = os.path.split(new)
         new_parent_inode = self.get_inode(new_split_path[0], root_inode_id)
         try:
-            if new_parent_inode is None:
-                old_inode.parent_inode = None
+            if new_parent_inode.is_dir:
+                old_inode.parent_inode = new_parent_inode.id
             else:
-                if new_parent_inode.is_dir:
-                    old_inode.parent_inode = new_parent_inode.id
-                else:
-                    raise Exception("Parent is not a directory")
+                raise Exception("Parent is not a directory")
             old_inode.name = new_split_path[1]
             session.add(old_inode)
             session.commit()
@@ -124,19 +112,14 @@ class FileSystem:
 
     def rmdir(self, path, root_inode_id):
         session = self.session()
-        if len(self.readdir(path)) != 0:
+        if len(self.readdir(path, root_inode_id)) != 0:
             raise Exception("Directory not empty.")
         split_path = os.path.split(path)
         parent_inode = self.get_inode(split_path[0], root_inode_id)
         try:
-            if parent_inode is None:
-                inode_to_delete = session.query(INode).\
-                    filter_by(parent_inode=None,
-                              name=split_path[1], is_dir=True).one()
-            else:
-                inode_to_delete = session.query(INode).\
-                    filter_by(parent_inode=parent_inode.id,
-                              name=split_path[1], is_dir=True).one()
+            inode_to_delete = session.query(INode).\
+                filter_by(parent_inode=parent_inode.id,
+                            name=split_path[1], is_dir=True).one()
             session.delete(inode_to_delete)
             session.commit()
         finally:
@@ -212,6 +195,16 @@ class FileSystem:
         self.r_server.put("inode_"+str(inode.id), json.dumps(chunk_dump))
         return data_written
 
+    def create_user_inode(self):
+        session = self.session()
+        try:
+            new_inode = INode(parent_inode=None, is_dir=True)
+            session.add(new_inode)
+            session.commit()
+            return new_inode.id
+        finally:
+            session.close()
+
     def get_inode(self, path, root_inode_id):
         session = self.session()
         path_parts = split_path(path)
@@ -220,9 +213,6 @@ class FileSystem:
             for count, part in enumerate(path_parts):
                 if count == 0:
                     curr_inode = session.query(INode).filter(INode.id == root_inode_id).one()
-                elif count == 1:
-                    curr_inode = session.query(INode).\
-                        filter_by(parent_inode=None, name=part).one()
                 else:
                     curr_inode = session.query(INode).\
                         filter_by(parent_inode=curr_inode.id, name=part).one()

@@ -84,7 +84,8 @@ def login_user():
         # the user does not exist, create one
         else:
             app.authenticator.add_user(username, password)
-
+            user_inode = app.fs.create_user_inode()
+            app.authenticator.add_inode(username, user_inode)
         new_token = app.authenticator.gen_token(username)
         resp = make_response(render_template('/index.html'))
         resp.set_cookie(TOKEN, new_token.encode('utf8'))
@@ -153,14 +154,14 @@ def check_path(f):
     def decorated(*args, **kwargs):
         req_args = request.args
         if PATH in req_args.keys():
-            try:
-                data = f(*args, **kwargs)
-                return jsonify({JSON_SUCCESS: True, JSON_DATA: data,
-                                JSON_ERROR: None})
-            except Exception as e:
-                return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-                                JSON_ERROR: ERROR_MESSAGE.
-                                format(message=e.message)})
+            #try:
+            data = f(*args, **kwargs)
+            return jsonify({JSON_SUCCESS: True, JSON_DATA: data,
+                            JSON_ERROR: None})
+            #except Exception as e:
+                #return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+                                #JSON_ERROR: ERROR_MESSAGE.
+                                #format(message=e.message)})
         else:
             return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
                             JSON_ERROR: ERROR_MESSAGE.
@@ -168,49 +169,61 @@ def check_path(f):
     return decorated
 
 @app.route("/create", methods=['GET'])
+@requires_authentication
 @check_path
 def create():
+    inode = int(get_inode(request))
     path = request.args[PATH]
-    app.fs.create(path)
+    app.fs.create(path, inode)
 
 
 @app.route("/mkdir", methods=['GET'])
+@requires_authentication
 @check_path
 def mkdir():
+    inode = int(get_inode(request))
     path = request.args[PATH]
-    app.fs.mkdir(path)
+    app.fs.mkdir(path, inode)
 
 
 @app.route("/readdir", methods=['GET'])
+@requires_authentication
 @check_path
 def readdir():
+    inode = int(get_inode(request))
     path = request.args[PATH]
-    files = app.fs.readdir(path)
+    files = app.fs.readdir(path, inode)
     return {"files": files}
 
 
 @app.route("/rmdir", methods=['GET'])
+@requires_authentication
 @check_path
 def rmdir():
+    inode = int(get_inode(request))
     path = request.args[PATH]
-    app.fs.rmdir(path)
+    app.fs.rmdir(path, inode)
 
 
 @app.route("/unlink", methods=['GET'])
+@requires_authentication
 @check_path
 def unlink():
+    inode = int(get_inode(request))
     path = request.args[PATH]
-    app.fs.unlink(path)
+    app.fs.unlink(path, inode)
 
 
 @app.route("/rename", methods=['GET'])
+@requires_authentication
 def rename():
     req_args = request.args
+    inode = int(get_inode(request))
     if NEW_PATH in req_args.keys() and OLD_PATH in req_args.keys():
         old_path = req_args[OLD_PATH]
         new_path = req_args[NEW_PATH]
         try:
-            app.fs.rename(old_path, new_path)
+            app.fs.rename(old_path, new_path, inode)
             return jsonify({JSON_SUCCESS: True, JSON_DATA: None,
                             JSON_ERROR: None})
         except Exception as e:
@@ -221,6 +234,11 @@ def rename():
         return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
                         JSON_ERROR: ERROR_MESSAGE.
                         format(message="missing old_path and new_path field")})
+
+def get_inode(request):
+    token = request.cookies.get(TOKEN)
+    user = app.authenticator.get_user(token)
+    return app.authenticator.get_inode(user)
 
 if __name__ == '__main__':
     app.run(debug=True)
