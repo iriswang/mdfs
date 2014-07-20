@@ -20,10 +20,10 @@ class FileSystem:
         self.session = sessionmaker(bind=self.engine)
         self.r_server = Redis(db=DB_NUM)
 
-    def create(self, path, mode=None):
+    def create(self, path, root_inode_id, root_inode_id, mode=None):
         session = self.session()
         split_path = os.path.split(path)
-        parent_inode = self.get_inode(split_path[0])
+        parent_inode = self.get_inode(split_path[0], root_inode_id)
         new_name = split_path[1]
         try:
             if parent_inode is None:
@@ -39,13 +39,13 @@ class FileSystem:
         finally:
             session.close()
 
-    def getattr(self, path, fh=None):
+    def getattr(self, path, root_inode_id, fh=None):
         pass
 
-    def mkdir(self, path, mode=None):
+    def mkdir(self, path, root_inode_id, mode=None):
         session = self.session()
         split_path = os.path.split(path)
-        parent_inode = self.get_inode(split_path[0])
+        parent_inode = self.get_inode(split_path[0], root_inode_id)
         new_inode = split_path[1]
         try:
             if parent_inode is None:
@@ -60,11 +60,11 @@ class FileSystem:
         finally:
             session.close()
 
-    def open(self, path, flags):
+    def open(self, path, flags, root_inode_id):
         pass
 
-    def read(self, path, size, offset, fh):
-        inode = self.get_inode(path)
+    def read(self, path, size, offset, fh, root_inode_id):
+        inode = self.get_inode(path, root_inode_id)
         chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
         chunk_list = map(Chunk.load, chunk_json)
         end_offset = size + offset
@@ -82,10 +82,10 @@ class FileSystem:
         return bytes[bytes_begin_offset:bytes_begin_offset + size]
 
 
-    def readdir(self, path, fh=None):
+    def readdir(self, path, root_inode_id, fh=None):
         result = []
         session = self.session()
-        folder_path = self.get_inode(path)
+        folder_path = self.get_inode(path, root_inode_id)
         try:
             if folder_path is None:
                 files = session.query(INode).filter_by(parent_inode=None)
@@ -103,11 +103,11 @@ class FileSystem:
         finally:
             session.close()
 
-    def rename(self, old, new):
+    def rename(self, old, new, root_inode_id):
         session = self.session()
-        old_inode = self.get_inode(old)
+        old_inode = self.get_inode(old, root_inode_id)
         new_split_path = os.path.split(new)
-        new_parent_inode = self.get_inode(new_split_path[0])
+        new_parent_inode = self.get_inode(new_split_path[0], root_inode_id)
         try:
             if new_parent_inode is None:
                 old_inode.parent_inode = None
@@ -122,12 +122,12 @@ class FileSystem:
         finally:
             session.close()
 
-    def rmdir(self, path):
+    def rmdir(self, path, root_inode_id):
         session = self.session()
         if len(self.readdir(path)) != 0:
             raise Exception("Directory not empty.")
         split_path = os.path.split(path)
-        parent_inode = self.get_inode(split_path[0])
+        parent_inode = self.get_inode(split_path[0], root_inode_id)
         try:
             if parent_inode is None:
                 inode_to_delete = session.query(INode).\
@@ -142,8 +142,8 @@ class FileSystem:
         finally:
             session.close()
 
-    def unlink(self, path):
-        file_to_delete = self.get_inode(path)
+    def unlink(self, path, root_inode_id):
+        file_to_delete = self.get_inode(path, root_inode_id)
         if file_to_delete.is_dir:
             raise Exception("Cannot delete directory")
         else:
@@ -154,8 +154,8 @@ class FileSystem:
             finally:
                 session.close()
 
-    def write(self, path, data, offset, fh):
-        inode = self.get_inode(path)
+    def write(self, path, data, offset, root_inode_id, fh=None):
+        inode = self.get_inode(path, root_inode_id)
         chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
         chunk_list = map(Chunk.load, chunk_json)
         end_offset = len(data) + offset
@@ -212,14 +212,14 @@ class FileSystem:
         self.r_server.put("inode_"+str(inode.id), json.dumps(chunk_dump))
         return data_written
 
-    def get_inode(self, path):
+    def get_inode(self, path, root_inode_id):
         session = self.session()
         path_parts = split_path(path)
         curr_inode = None
         try:
             for count, part in enumerate(path_parts):
                 if count == 0:
-                    pass
+                    curr_inode = session.query(INode).filter(INode.id == root_inode_id).one()
                 elif count == 1:
                     curr_inode = session.query(INode).\
                         filter_by(parent_inode=None, name=part).one()
