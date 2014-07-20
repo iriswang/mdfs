@@ -66,7 +66,7 @@ class MDFS(LoggingMixIn, Operations):
                 stat = S_IFREG
             now = time()
             return dict(st_mode=(stat | 0777), st_nlink=1,
-                                st_size=0, st_ctime=time(), st_mtime=time(),
+                                st_size=json['data']['inode']['size'], st_ctime=time(), st_mtime=time(),
                                 st_atime=time())
 
 
@@ -98,15 +98,12 @@ class MDFS(LoggingMixIn, Operations):
 
     def read(self, path, size, offset, fh):
         print "READ", path, size, offset
-        return "HI"
         response = requests.get(SERVER+"/read", params={
             "path": path,
             "size": size,
             "offset": offset
         }, cookies=self.cookies)
-        print response.text
-        print b64decode(response.json()['data']['data'])
-        return str(b64decode(response.json()['data']['data']))
+        return str(b64decode(b64decode(response.json()['data']['data'])))
 
     def readdir(self, path, fh):
         print "READDIR", path
@@ -182,7 +179,7 @@ class MDFS(LoggingMixIn, Operations):
         print "WRITE", path, data, offset
         response = requests.get(SERVER+"/write", params={
             "path": path,
-            "data": b64encode(data),
+            "data": b64encode(b64encode(data)),
             "offset": offset
         }, cookies=self.cookies)
         print response.text

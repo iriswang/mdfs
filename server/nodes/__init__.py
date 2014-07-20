@@ -18,11 +18,11 @@ def weighted_choice(choices):
    assert False, "Shouldn't get here"
 
 #SERVICES = [('soundcloud', 2000)]
-SERVICES = [('imgur', 000), ('dropbox', 2000)]#, ('imgur', 2000)]
+SERVICES = [('imgur', 2000), ('dropbox', 0000)]#, ('imgur', 2000)]
 SERVICE_MAP = {
     #'facebook': FBNode,
      'dropbox': DBNode,
-     #'imgur': ImgurNode,
+     'imgur': ImgurNode,
     #'soundcloud': SoundCloudNode,
 }
 

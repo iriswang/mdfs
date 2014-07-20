@@ -196,10 +196,11 @@ def readdir():
 @check_path
 def getattr():
     path = request.args[PATH]
-    inode = app.fs.getattr(path, None)
+    inode, size = app.fs.getattr(path, None)
     return {"inode": {
         'id': inode.id,
-        'is_dir': inode.is_dir
+        'is_dir': inode.is_dir,
+        'size': size
     }}
 
 
@@ -230,7 +231,7 @@ def read():
 @check_path
 def write():
     path = request.args[PATH]
-    data = b64decode(request.args['data'])
+    data = bytearray(b64decode(request.args['data']))
     offset = int(request.args['offset'])
     return {
         "data": b64encode(app.fs.write(path, data, offset, None, None))

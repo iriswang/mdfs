@@ -44,7 +44,10 @@ class FileSystem:
 
     def getattr(self, path, root_inode_id, fh=None):
         inode = self.get_inode(path, root_inode_id)
-        return inode
+        chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
+        chunk_list = map(Chunk.load, chunk_json)
+        file_length = sum([x.size for x in chunk_list])
+        return inode, file_length
 
     def mkdir(self, path, root_inode_id, mode=None):
         session = self.session()
@@ -173,7 +176,10 @@ class FileSystem:
                 session.close()
 
     def write(self, path, data, offset, root_inode_id, fh=None):
+
         try:
+            print type(data)
+            print "DATA", type(data[0])
             inode = self.get_inode(path, root_inode_id)
             chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
             chunk_list = map(Chunk.load, chunk_json)
@@ -185,7 +191,9 @@ class FileSystem:
 
             start = offset / CHUNK_SIZE
             end = (end_offset - 1) / CHUNK_SIZE
-            if (file_length > offset):
+            print file_length
+            print offset
+            if (offset > 0 and file_length <= offset):
                 raise Exception('File length shorter than offset')
 
             chunks_to_get = []
