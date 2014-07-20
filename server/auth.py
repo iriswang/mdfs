@@ -28,7 +28,7 @@ PASSWORD = "password"
 TOKEN_NUM_BYTES = 32
 INODE = "inode"
 SERVICES = "services"
-
+SUPPORTED_SERVICES = ["twitter", "imgur", "soundcloud", "facebook", "dropbox"]
 class Authenticator:
     def __init__(self, host=R_HOST, port=R_PORT, db=R_DB, password=R_PASSWORD, socket_timeout=R_SOCKET_TIMEOUT,
                  connection_pool=R_CONNECTION_POOL, charset=R_CHARSET, errors=R_ERRORS,
@@ -36,8 +36,9 @@ class Authenticator:
         self.r_server = Redis(host=host, port=port, db=db, password=password, socket_timeout=socket_timeout,
                               connection_pool=connection_pool, charset=charset, errors=errors,
                               decode_responses=decode_responses, unix_socket_path=unix_socket_path)
-        self.r_server.sadd(SERVICES, "twitter")
-        self.r_server.sadd(SERVICES, "imgur")
+
+        for ss in SUPPORTED_SERVICES:
+            self.r_server.sadd(SERVICES, ss)
 
     def check_token(self, token):
         return self.r_server.get(token) is not None
