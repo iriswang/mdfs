@@ -1,0 +1,12 @@
+INFO:requests.packages.urllib3.connectionpool:Starting new HTTPS connection (1): api.soundcloud.com
+DEBUG:requests.packages.urllib3.connectionpool:"GET /tracks/159464216/download?access_token=1-88843-105197285-dfa6baca3aa6e2&client_id=d3d8d0b3e2db7a1085678bd9478024dd HTTP/1.1" 302 28
+INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): ec-media.soundcloud.com
+DEBUG:requests.packages.urllib3.connectionpool:"GET /LrYH1K1ZyjKx?f10880d39085a94a0418a7ef61b03d5275edf83695e0cd6a5a31bf07e3b377558c857f5f8c0af964f751735affd2e2a46b16dc2f4c12811f5404888284&AWSAccessKeyId=AKIAJNIGGLK7XA7YZSNQ&Expires=1405828967&Signature=6XKhbfszAcYz4s8dOOdrEQGDi%2Fw%3D HTTP/1.1" 200 13000
+INFO:requests.packages.urllib3.connectionpool:Starting new HTTPS connection (1): api.soundcloud.com
+DEBUG:requests.packages.urllib3.connectionpool:"GET /tracks/159464216/download?access_token=1-88843-105197285-dfa6baca3aa6e2&client_id=d3d8d0b3e2db7a1085678bd9478024dd HTTP/1.1" 302 28
+INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): ec-media.soundcloud.com
+DEBUG:requests.packages.urllib3.connectionpool:"GET /LrYH1K1ZyjKx?f10880d39085a94a0418a7ef61b03d5275edf83695e0cd6a5a31bf07e3b377558c8b7f5f8c0af964ee205f7add1b811e94227f43d26497ef7c7ba0f891&AWSAccessKeyId=AKIAJNIGGLK7XA7YZSNQ&Expires=1405828969&Signature=XDUH3zwf2auGOTP5QINtuGoJgJs%3D HTTP/1.1" 200 13000
+INFO:requests.packages.urllib3.connectionpool:Starting new HTTPS connection (1): api.soundcloud.com
+DEBUG:requests.packages.urllib3.connectionpool:"GET /tracks/159464216/download?access_token=1-88843-105197285-dfa6baca3aa6e2&client_id=d3d8d0b3e2db7a1085678bd9478024dd HTTP/1.1" 302 28
+INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): ec-media.soundcloud.com
+DEBUG:requests.packages.urllib3.connectionpool:"GET /LrYH1K1ZyjKx?f10880d39085a94a0418a7ef61b03d5275edf83695e0cd6a5a31bf07e3b377558d837f5f8c0af964483c7063a0a81d9c9c779e8438e6ca198c76282535&AWSAccessKeyId=AKIAJNIGGLK7XA7YZSNQ&Expires=1405828971&Signature=L45dKgk8n1p8tQqWbBoWnL0GOSw%3D HTTP/1.1" 200 13000

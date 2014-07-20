@@ -2,6 +2,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, INode
 from redis import Redis
+from chunker import CHUNK_SIZE
+from nodes import Chunk
 import os
 import json
 
@@ -33,7 +35,7 @@ class FileSystem:
                     raise Exception("Parent is not a directory")
             session.add(new_inode)
             session.commit()
-            self.r_server.set(new_inode.id, json.dumps([]))
+            self.r_server.set("inode_"+str(new_inode.id), json.dumps([]))
         finally:
             session.close()
 
@@ -62,7 +64,23 @@ class FileSystem:
         pass
 
     def read(self, path, size, offset, fh):
-        pass
+        inode = self.get_inode(path)
+        chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
+        chunk_list = map(Chunk.load, chunk_json)
+        end_offset = size + offset
+
+        start = offset / CHUNK_SIZE
+        end = (end_offset - 1) / CHUNK_SIZE
+        chunks_to_fetch = chunk_list[start:end + 1]
+
+        chunk_dump = get_chunks(chunks_to_fetch)
+        bytes = []
+        for chunk in chunk_dump:
+            bytes.extend(chunk.data)
+
+        bytes_begin_offset = offset - chunk_list[start].offset
+        return bytes[bytes_begin_offset:bytes_begin_offset + size]
+
 
     def readdir(self, path, fh=None):
         result = []
@@ -99,7 +117,6 @@ class FileSystem:
                 else:
                     raise Exception("Parent is not a directory")
             old_inode.name = new_split_path[1]
-            print old_inode
             session.add(old_inode)
             session.commit()
         finally:
@@ -138,12 +155,66 @@ class FileSystem:
                 session.close()
 
     def write(self, path, data, offset, fh):
-        pass
+        inode = self.get_inode(path)
+        chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
+        chunk_list = map(Chunk.load, chunk_json)
+        end_offset = len(data) + offset
+        data_written = 0
+        file_length = sum([x.size for x in chunk_list])
+        chunk_index = len(chunk_list)
+        chunk_offset = chunk_index * CHUNK_SIZE
+
+        start = offset / CHUNK_SIZE
+        end = (end_offset - 1) / CHUNK_SIZE
+        if (file_length > offset):
+            raise Exception('File length shorter than offset')
+
+        chunks_to_get = []
+        if (len(chunk_list) > 0 and len(chunk_list) >= start):
+            chunks_to_get.append(chunk_list[start])
+
+        if (start != end):
+            chunks_to_get.append(chunk_list[end])
+
+        got_chunks = get_chunks(chunks_to_get)
+        for got_chunk in got_chunks:
+            chunk_list[got_chunk.index].data = got_chunk.data
+
+
+        for chunk in chunk_list:
+
+            if (chunk.index == start):
+                size_of_first_chunk = CHUNK_SIZE if end_offset > CHUNK_SIZE else end_offset
+                size_of_original_data = offset - chunk.offset
+                chunk.data = chunk.data[0:size_of_original_data] + data[0:size_of_first_chunk - size_of_original_data]
+                chunk.size = size_of_first_chunk
+                data_written += size_of_first_chunk - size_of_original_data
+
+            if (chunk.index > start and chunk.index < end):
+                chunk.data = data[data_written:data_written + CHUNK_SIZE]
+                data_written += CHUNK_SIZE
+
+            if (start != end and chunk.index == end):
+                size_of_data_written = end_offset - chunk.offset
+                size_of_end_chunk = chunk.size if end_offset < chunk.offset + chunk.size else size_of_data_written
+                chunk.data = data[data_written:data_written + size_of_data_written] + chunk.data[size_of_data_written:size_of_end_chunk]
+                data_written += size_of_data_written
+
+        while(data_written < len(data)):
+            new_chunk_data = data[data_written: data_written + CHUNK_SIZE]
+            chunk = Chunk(new_chunk_data, len(new_chunk_data), chunk_index, chunk_offset)
+            chunk_index += 1
+            chunk_offset += CHUNK_SIZE
+            data_written += chunk.size
+            chunk_list.append(chunk)
+
+        chunk_dump = chunk_json[0:start] + allocate_chunks_to_service(chunk_list[start:end+1]) + chunk_json[end+1:]
+        self.r_server.put("inode_"+str(inode.id), json.dumps(chunk_dump))
+        return data_written
 
     def get_inode(self, path):
         session = self.session()
         path_parts = split_path(path)
-        print path_parts
         curr_inode = None
         try:
             for count, part in enumerate(path_parts):

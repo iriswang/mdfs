@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.DEBUG)
 from nodes import get_nodes, Chunk, init_nodes, get_node
 
 CHUNK_SIZE = 10240
-REDUNDANCY = 2
+REDUNDANCY = 1
 
 
 def split_bytes_into_chunks(bytes):
@@ -43,7 +43,7 @@ def get_chunks(chunk_list):
 def allocate_chunks_to_service(chunks, n=2):
     chunk_store = []
     for chunk in chunks:
-        nodes = get_nodes(chunk, {"facebook": None, "dropbox": None, "imgur": None}, REDUNDANCY)
+        nodes = get_nodes(chunk, {"facebook": None, "dropbox": None, "imgur": None, "soundcloud": None}, REDUNDANCY)
         for node in nodes:
             chunk_store.append((node, chunk))
     dump = pool.map(put_chunk, chunk_store)

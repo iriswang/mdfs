@@ -4,6 +4,7 @@ from node import Node
 from fb import FBNode
 from drop import DBNode
 from imgur import ImgurNode
+from sc import SoundCloudNode
 from chunk import Chunk
 
 def weighted_choice(choices):
@@ -16,11 +17,13 @@ def weighted_choice(choices):
       upto += w
    assert False, "Shouldn't get here"
 
-SERVICES = [('imgur', 2000), ('dropbox', 2000)]#, ('imgur', 2000)]
+SERVICES = [('soundcloud', 2000)]
+# SERVICES = [('imgur', 2000), ('dropbox', 2000)], ('imgur', 2000)]
 SERVICE_MAP = {
     #'facebook': FBNode,
-    'dropbox': DBNode,
-    'imgur': ImgurNode
+    # 'dropbox': DBNode,
+    # 'imgur': ImgurNode,
+    'soundcloud': SoundCloudNode,
 }
 
 def get_nodes(chunk, access_tokens, n=2):
