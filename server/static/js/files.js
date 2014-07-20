@@ -2,6 +2,8 @@ $(document).ready(function() {
 	mdfs.setCurrentDirectory("/");
 	mdfs.getRootDirectory();
 
+	$(".profile-picture").css("background", "url('" + window.url + "') no-repeat center center;");
+
 
 	var obj = $("#draganddrop");
 	console.log(obj);
@@ -9,7 +11,10 @@ $(document).ready(function() {
 	{
 	    e.stopPropagation();
 	    e.preventDefault();
-	    $(this).css('border', '2px solid #0B85A1');
+	    $(this).css('box-shadow', 'inset 0 0 0 1px rgba(255,255,255,0.1), 0 1px 1px rgba(0,0,0,0.1)');
+	    $(".ch-info").css('transform', 'scale(1)');
+	    $(".ch-info").css('opacity', 1);
+	    $(".ch-info p").css('opacity', 1);
 	});
 	obj.on('dragover', function (e) 
 	{
@@ -19,7 +24,6 @@ $(document).ready(function() {
 	obj.on('drop', function (e) 
 	{
 	 
-	     $(this).css('border', '2px dotted #0B85A1');
 	     e.preventDefault();
 	     var files = e.originalEvent.dataTransfer.files;
 	 
@@ -37,7 +41,6 @@ $(document).ready(function() {
 	{
 	  e.stopPropagation();
 	  e.preventDefault();
-	  obj.css('border', '2px dotted #0B85A1');
 	});
 	$(document).on('drop', function (e) 
 	{

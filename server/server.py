@@ -312,9 +312,9 @@ def upload_file():
 
                 # TODO (SHARAD) this writes file to uploads
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                inode = fs.get_inode(path)
-                fs.create(path+"/"+filename, inode)
-                new_inode = fs.get_inode(path + "/" + filename)
+                inode = app.fs.get_inode(path)
+                app.fs.create(path+"/"+filename, inode)
+                new_inode = app.fs.get_inode(path + "/" + filename)
                 data = open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb').read()
                 chunks = split_bytes_into_chunks(data)
                 chunk_dump = allocate_chunks_to_service(chunks)
