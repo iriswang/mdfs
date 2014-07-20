@@ -4,7 +4,7 @@ from node import Node
 from fb import FBNode
 from drop import DBNode
 from imgur import ImgurNode
-from soundcloud import SoundCloud
+from sc import SoundCloudNode
 from chunk import Chunk
 
 def weighted_choice(choices):
