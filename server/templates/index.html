@@ -1,33 +1,84 @@
 <html>
 <head>
   <title>mdfs</title>
+  <!-- Styles -->
+  <link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.css">
+  <link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="css/index.css">
+  <link rel="stylesheet" type="text/css" href="css/files.css">
 
   <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-  <script src="http://connect.soundcloud.com/sdk.js"></script>
-  <script src="https://www.dropbox.com/static/api/dropbox-datastores-1.1-latest.js" type="text/javascript"></script>
-  <script type="text/javascript" src="js/mdfs.js"></script>
-  <script type="text/javascript" src="js/index.js"></script>
-<script>
 
-</script>
+  <!-- SDK -->
+  <script src="https://www.dropbox.com/static/api/dropbox-datastores-1.1-latest.js" type="text/javascript"></script>
+  <script src="http://connect.soundcloud.com/sdk.js"></script>
+  
+  <!-- JS -->
+  <script type="text/javascript" src="js/mdfs.js"></script>
+  <script type="text/javascript" src="js/files.js"></script>
+
+
+  <!-- Fonts -->
+  <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+
+  <!-- Icons -->
+  <link rel='stylesheet' type='text/css' href="css/pe-icon-7-stroke.css">
 </head>
 <body>
+  <div class="container">
 
-  <h1>Login In Here</h1>
-  <h2>SoundCloud</h2>
-    <button class="soundcloud-login">Connect</button>
-    <div class="soundcloud-success"></div>
-
-  <h2>Facebook</h2>
-    <button class="facebook-login">Connect</button>
-    <div id="status">
+    <div class="header-container row">
     </div>
+    <!-- drag and drop AND table -->
+    <div class="interface-container row">
 
-  <h2>Dropbox</h2>
-    <button class="dropbox-login">Connect</button>
-    <div class="success"></div>
+
+      <!-- drag and drop -->
+      <div class="drop-container col-md-6">
+
+        <div class="node-container top-row row">
+          <div class="soundcloud attach-node col-md-6">
+            <div class="soundcloud-login"></div>
+          </div>
+
+          <div class="facebook attach-node col-md-6">
+            <button class="facebook-login">Connect</button>
+          </div>
+        </div>
+
+        <div class="circle-container row">
+          <div class="circle" id="draganddrop">
+          </div>
+        </div>
+
+
+        <div class="node-container bottom-row row">
+          <div class="dropbox attach-node col-md-6">
+            <button class="dropbox-login">Connect</button>
+          </div>
+
+          <div class="imgur attach-node col-md-6">
+            <button class="imgur-login">Connect</button>
+          </div>
+
+        </div>
+      </div>
+
+
+
+      <!-- table -->
+      <div class="nav-container col-md-6 row">
+        <div class="table-navigation col-md-8">
+          <div class="navigation-container"></div>
+        </div>
+
+        <div class="file-options"></div>
+
+        <div class="table-container row directory-container">
+          <!-- table put in by js -->
+        </div>
+    </div>
+  </div>
+
 </body>
-
-<script type="text/javascript" src="js/facebook.js"></script>
 </html>

@@ -1,8 +1,5 @@
 $(document).ready(function() {
-	
 	mdfs.setCurrentDirectory("/");
-
-
 	mdfs.getRootDirectory();
 
 

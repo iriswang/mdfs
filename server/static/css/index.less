@@ -1,15 +1,13 @@
-h1 {
-	color: red;
+@import "utils.less";
+
+.soundcloud-login {
+	height: 80px;
+	width: 80px;
+	.background('Soundcloud.png');
+	cursor: pointer;
+    .transition(0.1s);
 }
 
-.success {
-	color: green;
-}
-
-.show {
-	display: block;
-}
-
-.hide {
-	display: none;
+.soundcloud-login:active {
+    -webkit-transform: scale(0.85);
 }

@@ -68,11 +68,6 @@ def render_login():
 def index():
     return render_template('/index.html')
 
-@app.route("/files")
-@requires_authentication
-def files():
-    return render_template('/files.html')
-
 @app.route("/callback")
 def soundcloud_callback():
     return render_template('/callback.html')
@@ -93,6 +88,7 @@ def login_user():
         # the user does not exist, create one
         else:
             app.authenticator.add_user(username, password)
+            print "i'm here"
             user_inode = app.fs.create_user_inode()
             app.authenticator.add_inode(username, user_inode)
         new_token = app.authenticator.gen_token(username)
@@ -120,7 +116,6 @@ def login_user():
 @app.route('/initialize', methods=['POST'])
 @requires_authentication
 def add_service_token():
-    print "ADD SERVICE TOKEN"
     req_json = request.form
     token = get_token_from_cookie(request)
     if SERVICE in req_json and SERVICE_TOKEN in req_json:
@@ -281,6 +276,8 @@ def rename():
 def get_inode(request):
     token = request.cookies.get(TOKEN)
     user = app.authenticator.get_user(token)
+    print '~~~>', user
+    print '--->', app.authenticator.get_inode(user)
     return app.authenticator.get_inode(user)
 
 
@@ -304,6 +301,8 @@ def upload_file():
             # if f and allowed_file(f.filename) <-- lol security amirite:
             if f:
                 filename = secure_filename(f.filename)
+
+                # TODO (SHARAD) this writes file to uploads
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 print filename
                 return jsonify({JSON_SUCCESS: True})

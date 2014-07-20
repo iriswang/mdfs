@@ -1,1 +1,1 @@
-h1{color:#f00}.success{color:#008000}.show{display:block}.hide{display:none}
+.soundcloud-login{height:80px;width:80px;background:url('Soundcloud.png') no-repeat center center;-webkit-background-size:cover;-moz-background-size:cover;-o-background-size:cover;background-size:cover;cursor:pointer;-webkit-transition:.1s;-moz-transition:.1s;transition:.1s}.soundcloud-login:active{-webkit-transform:scale(.85)}

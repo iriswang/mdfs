@@ -30,10 +30,17 @@ mdfs.getRootDirectory = function(){
 
 /* more general case of getRootDirectory, renders files at path */
 mdfs.cd = function(path) {
+    if (path == '/') {
+        var data = {path: path};
+        
+    } else {
+        var data = {path: _stripTrailingSlash(path)};
+    }
+
     $.ajax({
         type: "GET",
         url: "/readdir",
-        data: {path: _stripTrailingSlash(path)},
+        data: data,
         success: function(json)  {
             console.log(json);
             console.log('cd into: ' + path);
