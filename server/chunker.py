@@ -26,7 +26,7 @@ def split_bytes_into_chunks(bytes):
 
 def put_chunk(chunk_store):
     node, chunk = chunk_store
-    print "PUTTING", node, chunk.data
+    print "PUTTING", node, chunk
     node.put_chunk_data(chunk)
     return (node, chunk)
 

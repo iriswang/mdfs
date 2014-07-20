@@ -2,16 +2,8 @@ $(document).ready(function() {
 	mdfs.setCurrentDirectory("/");
 	mdfs.getRootDirectory();
 
-	$(".ch-item").hover(function() {
-		console.log('aeae');
-		$(".ch-info").css('transform', 'scale(1)');
-		$(".ch-info").css('opacity', '1');
-	},
-	function() {
-		console.log('aeae');
-		$(".ch-info").css('transform', 'scale(0)');
-		$(".ch-info").css('opacity', '0');
-	});
+	$(".profile-picture").css("background", "url('" + window.url + "') no-repeat center center;");
+
 
 	var obj = $("#draganddrop");
 	console.log(obj);
@@ -76,8 +68,6 @@ $(document).ready(function() {
 	{
 
 		console.log('-->', formData);
-		$(".circle").addClass("spin");
-		$(".ch-item").unbind('hover');
 	    var uploadURL ="/upload?path=" + mdfs.getCurrentDirectory(); //Upload URL
 	    var extraData ={}; //Extra Data.
 	    var jqXHR=$.ajax({
@@ -92,25 +82,6 @@ $(document).ready(function() {
 	        	console.log(data);
 	        	if (data.success == true) {
 	        		console.log("YAYYYYYY file upload complete!");
-	        		$(".circle").removeClass("spin");
-
-				    $("#draganddrop").css("box-shadow", "");
-				    $(".ch-info").css('transform', 'scale(0)');
-				    $(".ch-info").css('opacity', 0);
-				    //$(".ch-info p").css('opacity', 0);
-
-					$(".ch-item").hover(function() {
-						console.log('aeae');
-						$(".ch-info").css('transform', 'scale(1)');
-						$(".ch-info").css('opacity', '1');
-					},
-					function() {
-						console.log('aeae');
-						$(".ch-info").css('transform', 'scale(0)');
-						$(".ch-info").css('opacity', '0');
-					});
-
-
 	        		mdfs.cd(mdfs.getCurrentDirectory());
 	        	}         
 	        }
