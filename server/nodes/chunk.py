@@ -4,12 +4,12 @@ lock = Lock()
 
 class Chunk:
 
-    def __init__(self, data, size, index, offset):
+    def __init__(self, data, size, index, offset, info={}):
         self.data = data
         self.size = size
         self.index = index
         self.offset = offset
-        self.info = {}
+        self.info = info
 
     def update_info(self, service, info):
         lock.acquire()
@@ -23,3 +23,7 @@ class Chunk:
             "offset": self.offset,
             "info": self.info
         }
+
+    @staticmethod
+    def load(json):
+        return Chunk(None, json['size'], json['size'], json['index'], json['offset'], json['info'])
