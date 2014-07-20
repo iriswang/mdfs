@@ -1,11 +1,13 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, INode
+from redis import Redis
 import os
+import json
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'inode.db')
-
+DB_NUM = 1
 
 
 class FileSystem:
@@ -14,6 +16,7 @@ class FileSystem:
         self.engine = create_engine(DATABASE_URI)
         Base.metadata.create_all(self.engine)
         self.session = sessionmaker(bind=self.engine)
+        self.r_server = Redis(db=DB_NUM)
 
     def create(self, path, mode=None):
         session = self.session()
@@ -30,6 +33,7 @@ class FileSystem:
                     raise Exception("Parent is not a directory")
             session.add(new_inode)
             session.commit()
+            self.r_server.set(new_inode.id, json.dumps([]))
         finally:
             session.close()
 
@@ -39,12 +43,10 @@ class FileSystem:
     def mkdir(self, path, mode=None):
         session = self.session()
         split_path = os.path.split(path)
-        print split_path
         parent_inode = self.get_inode(split_path[0])
         new_inode = split_path[1]
         try:
             if parent_inode is None:
-                print "NEW_INODE", new_inode
                 new_inode = INode(is_dir=True, name=new_inode)
             else:
                 if parent_inode.is_dir:
