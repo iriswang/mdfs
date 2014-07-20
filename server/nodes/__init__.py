@@ -16,10 +16,11 @@ def weighted_choice(choices):
       upto += w
    assert False, "Shouldn't get here"
 
-SERVICES = [('facebook', 6206), ('dropbox', 2000)]
+SERVICES = [('dropbox', 2000), ('imgur', 2000)]
 SERVICE_MAP = {
     'facebook': FBNode,
-    'dropbox': DBNode
+    'dropbox': DBNode,
+    'imgur': ImgurNode
 }
 
 def get_nodes(chunk, access_tokens, n=2):
