@@ -2,9 +2,6 @@ $(document).ready(function() {
 	mdfs.setCurrentDirectory("/");
 	mdfs.getRootDirectory();
 
-	$(".profile-picture").css("background", "url('" + window.url + "') no-repeat center center;");
-
-
 	var obj = $("#draganddrop");
 	console.log(obj);
 	obj.on('dragenter', function (e) 
@@ -68,6 +65,7 @@ $(document).ready(function() {
 	{
 
 		console.log('-->', formData);
+		$(".circle").addClass("spin");
 	    var uploadURL ="/upload?path=" + mdfs.getCurrentDirectory(); //Upload URL
 	    var extraData ={}; //Extra Data.
 	    var jqXHR=$.ajax({
@@ -82,6 +80,7 @@ $(document).ready(function() {
 	        	console.log(data);
 	        	if (data.success == true) {
 	        		console.log("YAYYYYYY file upload complete!");
+	        		$(".circle").removeClass("spin");
 	        		mdfs.cd(mdfs.getCurrentDirectory());
 	        	}         
 	        }

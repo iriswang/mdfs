@@ -261,7 +261,7 @@ def write():
     data = bytearray(b64decode(request.args['data']))
     offset = int(request.args['offset'])
     return {
-        "data": b64encode(app.fs.write(path, data, offset, inode, None))
+        "data": app.fs.write(path, data, offset, inode, None)
     }
 
 @app.route("/rename", methods=['GET'])

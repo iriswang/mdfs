@@ -33,6 +33,44 @@
 	position: relative;
 }
 
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background-color: red;
+  border-radius: 0px;
+  -webkit-transition: all 1s;
+  -moz-transition: all 1s;
+  -o-transition: all 1s;
+  transition: all 1s;
+  opacity: 1.0;
+}
+
+.circle.spin .loading {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 150px;
+  background-color: #98bf21;
+}
+
+.spin {
+     -webkit-animation: rotate 2s linear infinite;
+}
+
+@-webkit-keyframes rotate {
+    from{
+        -webkit-transform: rotate(0deg);
+    }
+    to{
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+
 .ch-item {
     overflow: hidden;
     position: relative;
@@ -55,6 +93,7 @@
     opacity: 0;
     transition: all 0.2s ease-in-out;
     transform: scale(0);
+    z-index: 9999;
 }
 
 .ch-info h3 {
