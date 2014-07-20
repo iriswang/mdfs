@@ -6,6 +6,7 @@ from flask import make_response
 from flask import Flask, request, jsonify
 from auth import Authenticator
 from functools import wraps
+from fs import FileSystem
 
 import requests
 from urlparse import urlparse
@@ -18,6 +19,9 @@ TOKEN = "token"
 INODE = "inode"
 SERVICE_TOKEN = "access_token"
 SERVICE = "service"
+PATH = "path"
+OLD_PATH = "old_path"
+NEW_PATH = "new_path"
 
 # JSON response keys
 JSON_SUCCESS = "success"
@@ -33,11 +37,11 @@ FB_CLIENT_ID = "1570250713202324"
 FB_CLIENT_SECRET = "25fdcad49fc80d5fa7da9be620d9d122"
 
 app.authenticator = Authenticator()
+app.fs = FileSystem()
 
 def requires_authentication(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        req_args = request.args
         token = request.cookies.get(TOKEN)
         if token:
             if app.authenticator.check_token(token):
@@ -47,7 +51,7 @@ def requires_authentication(f):
 
 @app.route('/login', methods=['GET'])
 def render_login():
-    
+
     # if token is invalid, redirect user to login page
     token = request.cookies.get(TOKEN)
     if not app.authenticator.check_token(token):
@@ -142,6 +146,81 @@ def get_extended_fb_token(access_token):
         print '(WARNING) Failed to parse retrieve long-lived access token', r.text
     print 'EXPIRES: ' + url_decode(r.text).get('expires')
     return access_token
+
+########## FS API CALLS ###########
+def check_path(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        req_args = request.args
+        if PATH in req_args.keys():
+            try:
+                data = f(*args, **kwargs)
+                return jsonify({JSON_SUCCESS: True, JSON_DATA: data,
+                                JSON_ERROR: None})
+            except Exception as e:
+                return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+                                JSON_ERROR: ERROR_MESSAGE.
+                                format(message=e.message)})
+        else:
+            return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+                            JSON_ERROR: ERROR_MESSAGE.
+                            format(message="missing path field")})
+    return decorated
+
+@app.route("/create", methods=['GET'])
+@check_path
+def create():
+    path = request.args[PATH]
+    app.fs.create(path)
+
+
+@app.route("/mkdir", methods=['GET'])
+@check_path
+def mkdir():
+    path = request.args[PATH]
+    app.fs.mkdir(path)
+
+
+@app.route("/readdir", methods=['GET'])
+@check_path
+def readdir():
+    path = request.args[PATH]
+    files = app.fs.readdir(path)
+    return {"files": files}
+
+
+@app.route("/rmdir", methods=['GET'])
+@check_path
+def rmdir():
+    path = request.args[PATH]
+    app.fs.rmdir(path)
+
+
+@app.route("/unlink", methods=['GET'])
+@check_path
+def unlink():
+    path = request.args[PATH]
+    app.fs.unlink(path)
+
+
+@app.route("/rename", methods=['GET'])
+def rename():
+    req_args = request.args
+    if NEW_PATH in req_args.keys() and OLD_PATH in req_args.keys():
+        old_path = req_args[OLD_PATH]
+        new_path = req_args[NEW_PATH]
+        try:
+            app.fs.rename(old_path, new_path)
+            return jsonify({JSON_SUCCESS: True, JSON_DATA: None,
+                            JSON_ERROR: None})
+        except Exception as e:
+            return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+                            JSON_ERROR: ERROR_MESSAGE.
+                            format(message=e.message)})
+    else:
+        return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+                        JSON_ERROR: ERROR_MESSAGE.
+                        format(message="missing old_path and new_path field")})
 
 if __name__ == '__main__':
     app.run(debug=True)

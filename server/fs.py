@@ -99,7 +99,6 @@ class FileSystem:
                 else:
                     raise Exception("Parent is not a directory")
             old_inode.name = new_split_path[1]
-            print old_inode
             session.add(old_inode)
             session.commit()
         finally:
@@ -143,7 +142,6 @@ class FileSystem:
     def get_inode(self, path):
         session = self.session()
         path_parts = split_path(path)
-        print path_parts
         curr_inode = None
         try:
             for count, part in enumerate(path_parts):
