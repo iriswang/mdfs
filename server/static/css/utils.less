@@ -109,7 +109,7 @@
 }
 
 .background(@url) {
-    background: url(@url) no-repeat center center fixed;
+    background: url(@url) no-repeat center center;
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
@@ -122,4 +122,18 @@
 	width: @width;
 	left: 50%;
     margin-left: -@width/2;
+}
+
+.rotate(@deg) {
+	transform: rotate(@deg);
+	-webkit-transform: rotate(@deg);
+	-ms-transform: rotate(@deg);
+	-moz-transform: rotate(@deg);
+	-o-transform: rotate(@deg);
+}
+
+.transition(@t) {
+	-webkit-transition: @t;
+	-moz-transition: @t;
+	transition: @t;
 }

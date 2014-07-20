@@ -52,6 +52,7 @@ $(document).ready(function() {
 	   {
 	        var fd = new FormData();
 	        fd.append('file', files[i]);
+	        // fd.append('path_to_file', mdfs.getCurrentDirectory());
 	 
 	        // var status = new createStatusbar(obj); //Using this we can set progress.
 	        // status.setFileNameSize(files[i].name,files[i].size);
@@ -62,26 +63,11 @@ $(document).ready(function() {
 
 	function sendFileToServer(formData)
 	{
-		console.log(formData);
-	    var uploadURL ="/upload"; //Upload URL
+
+		console.log('-->', formData);
+	    var uploadURL ="/upload?path=" + mdfs.getCurrentDirectory(); //Upload URL
 	    var extraData ={}; //Extra Data.
 	    var jqXHR=$.ajax({
-	            xhr: function() {
-	            var xhrobj = $.ajaxSettings.xhr();
-	            if (xhrobj.upload) {
-	                    xhrobj.upload.addEventListener('progress', function(event) {
-	                        var percent = 0;
-	                        var position = event.loaded || event.position;
-	                        var total = event.total;
-	                        if (event.lengthComputable) {
-	                            percent = Math.ceil(position / total * 100);
-	                        }
-	                        //Set progress
-	                        console.log(percent);
-	                    }, false);
-	                }
-	            return xhrobj;
-	        },
 	        url: uploadURL,
 	        type: "POST",
 	        contentType:false,
