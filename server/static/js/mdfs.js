@@ -58,19 +58,28 @@ mdfs.cd = function(path) {
 mdfs.ls = function(path, filenames){
     console.log(filenames);
     $(".directory-container").html(_lsHTML(filenames));
-    $(".table-row").click(function() {
-        console.log('STFU');
+
+    $(".table-row").click(function(e) {
+        e.stopPropagation();
+        e.preventDefault();
         // for each row add current directory to newPath
         var newPath = $(this).data("cd");
 
-        if (_filenameToKind($(this).data('filename')) == 'document') {
-            console.log('fuck');
+        if (_filenameToKind($(this).data('filename')) == 'file') {
+            console.log('its a file');
             mdfs.downloadFile(newPath);
         } else {
-            console.log('file fuck it');
+            console.log('directory');
             mdfs.cd(newPath);
         }
         
+    });
+
+    $(".delete").click(function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        console.log($(this).parent().parent().data('cd'));
+        mdfs.deleteFile($(this).parent().parent().data('cd'), $(this).parent().parent());
     });
 }
 
@@ -110,6 +119,21 @@ mdfs.setNavToCurrentDirectory = function(path) {
     });
 }
 
+
+mdfs.deleteFile = function(link, tableRow) {
+    $.ajax({
+        type: "GET",
+        url: '/unlink?path='+link,
+        success: function(json)  {
+            if (json.success == true) {
+                $(tableRow).slideUp(400);
+            }
+        },
+        dataType: "json"
+    });
+}
+
+
 mdfs.downloadFile = function(link) {
     window.open('/download?path='+link, "_blank")
     return;
@@ -137,12 +161,12 @@ _lsHTML = function(filenames) {
     var header = "" + 
     "<table class='directory table'>" + 
       "<thead>" + 
-          "<tr><th>Name</th><th>Kind</th></tr>" + 
+          "<tr><th>Name</th><th>Kind</th><th>Options</th></tr>" + 
       "</thead>";
     
     var body = "<tbody>";
     $(filenames).each(function(index, f) {
-        body += "<tr class='table-row' data-filename='"+ f + "' data-cd='" + _appendCurrentDirectoryToPath(f) + "'><td class='filename-td'>" + _filenameToIconNameFormat(f) + "</td><td>" + _filenameToKind(f) + "</td></tr>";
+        body += "<tr class='table-row' data-filename='"+ f + "' data-cd='" + _appendCurrentDirectoryToPath(f) + "'><td class='filename-td'>" + _filenameToIconNameFormat(f) + "</td><td>" + _filenameToKind(f) + "</td><td class='delete-container'><i class='delete pe-7s-close'></i></td></tr>";
     });
     body += "</tbody>"
     return header + body + "</table>";
@@ -173,7 +197,7 @@ _appendCurrentDirectoryToPath = function(directory) {
 }
 
 _createIcon = function(iconName) {
-    return "<i class='file-icon pe-7s-" + iconName + "'></i>"
+    return "<i class='file-icon pe-7s-" + iconName + "'></i>";
 }
 
 _stripTrailingSlash = function(string) {

@@ -1,0 +1,59 @@
+@import "utils.less";
+
+.soundcloud-login {
+	height: 80px;
+	width: 80px;
+	.background('Soundcloud.png');
+	cursor: pointer;
+    .transition(0.1s);
+}
+
+.dropbox-login {
+	height: 70px;
+	width: 70px;
+
+	.background('Dropbox.png');
+	cursor: pointer;
+    .transition(0.1s);
+}
+
+.imgur-login {
+	height: 70px;
+	width: 120px;
+
+    background: url('Imgur.png') no-repeat center center;
+    background-size: contain;
+    -webkit-background-size: contain;
+    -moz-background-size: contain;
+    -o-background-size: contain;
+    background-size: contain;
+
+	cursor: pointer;
+    .transition(0.1s);
+}
+
+.soundcloud-login:active {
+    -webkit-transform: scale(0.85);
+}
+
+.dropbox-login:active {
+    -webkit-transform: scale(0.85);
+}
+
+.imgur-login:active {
+    -webkit-transform: scale(0.85);
+}
+
+.login:active {
+    -webkit-transform: scale(0.85);
+}
+
+.inactive {
+    filter: url(filters.svg#grayscale); /* Firefox 3.5+ */
+    filter: gray; /* IE6-9 */
+    -webkit-filter: grayscale(1); /* Google Chrome, Safari 6+ & Opera 15+ */
+    &:hover {
+       filter: none;
+       -webkit-filter: grayscale(0);
+    }
+}
