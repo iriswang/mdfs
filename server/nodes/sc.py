@@ -5,6 +5,9 @@ import urllib2
 import requests
 import cStringIO
 
+logging.basicConfig(filename='soundcloud.log',level=logging.DEBUG)
+
+
 class SoundCloudNode(Node):
 
     client_id = 'd3d8d0b3e2db7a1085678bd9478024dd'
@@ -29,8 +32,6 @@ class SoundCloudNode(Node):
             "downloadable": "true",
             "sharing": 'private'
         })
-
-        # print track link
         
         chunk.update_info("soundcloud", {
             "link": track.download_url
@@ -39,12 +40,21 @@ class SoundCloudNode(Node):
         import time
         # really ghetto
         time.sleep(10)
+
+        # temp = self.get_chunk_data(chunk)
         
+        # if bytearray(melody) == temp:
+        #     logging.info('ITS THE SAME')
 
     def get_chunk_data(self, chunk):
         access_token = '1-88843-105197285-dfa6baca3aa6e2'
         client_id = 'd3d8d0b3e2db7a1085678bd9478024dd'
 
+        # logging.info(chunk.info['soundcloud']['link']+"?access_token=%s&client_id=%s" % (self.access_token, client_id))
+        # params = {
+        #     "access_token": self.access_token,
+        #     "client_id": client_id
+        # }
         link = chunk.info['soundcloud']['link']+"?access_token=%s&client_id=%s" % (access_token, client_id)
         r = requests.get(link, stream=True)
         if r.status_code == 200:
@@ -53,9 +63,9 @@ class SoundCloudNode(Node):
                 iostream.write(c)
             data = iostream.getvalue()
         else:
-            raise Exception
+            raise Exception("THIS IS REALLY BAD: 404")
 
-        # output it to a file so its a wave file (also ghetto)
+        # output it to a file so its a wave file
         output = open("output.wav", "w")
         output.write(data)
         output.close()
