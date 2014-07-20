@@ -313,10 +313,12 @@ def upload_file():
                 # TODO (SHARAD) this writes file to uploads
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 inode = fs.get_inode(path)
+                fs.create(path+"/"+filename, inode)
+                new_inode = fs.get_inode(path + "/" + filename)
                 data = open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb').read()
                 chunks = split_bytes_into_chunks(data)
                 chunk_dump = allocate_chunks_to_service(chunks)
-                r_server.set("inode_"+str(inode.id), json.dumps(chunk_dump))
+                r_server.set("inode_"+str(new_inode.id), json.dumps(chunk_dump))
                 return jsonify({JSON_SUCCESS: True})
         return jsonify({JSON_SUCCESS: False})
     except Exception as e:
