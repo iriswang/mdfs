@@ -33,3 +33,7 @@ class FBNode(Node):
             "type": 'image',
             "id": result.json()['id']
         })
+
+    def get_chunk_data(self, chunk):
+        access_token = "CAACEdEose0cBAAi9N7wuZB4XhThmntkrStMdmlzwG10RXZC91uqn0kZBX7ZBiahKfqF5jYT486dWrKjAaqvSSD1oZAuhFn1AY6iBrZCZBe7SK5F76LuSSBh3cqLvTQzoud60HQm88n0uegg0ZAUMZBnbAJCTL5BVpzvTLfvKFMAqU9VhOZA5ECyLYx11LkGSxD3rut48GRwOExLcCUmleyQZCtH"
+        result = requests.get(BASE_URL+"/%s" % chunk.info["facebook"]["id"])

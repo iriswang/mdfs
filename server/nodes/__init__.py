@@ -22,12 +22,19 @@ SERVICE_MAP = {
     'dropbox': DBNode
 }
 
-def get_nodes(chunk, access_token, n=2):
+def get_nodes(chunk, access_tokens, n=2):
     nodes = []
     services = set()
     while len(nodes) < n:
         service = weighted_choice(SERVICES)
         if service not in services:
             services.add(service)
-            nodes.append(SERVICE_MAP[service](access_token))
+            nodes.append(SERVICE_MAP[service](access_tokens[service]))
     return nodes
+
+def init_nodes(redis, access_tokens, user_id):
+    for service, _ in SERVICES:
+        result = redis.get("%s_%s_initializated" % (user_id, service))
+        if result is None or result == false:
+            SERVICE_MAP[service](access_tokens[service]).init(redis)
+            result = redis.set("%s_%s_initializated" % (user_id, service), )
