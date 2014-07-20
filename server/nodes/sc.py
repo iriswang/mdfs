@@ -20,7 +20,7 @@ class SoundCloudNode(Node):
     def put_chunk_data(self, chunk):
         access_token = '1-88843-105197285-dfa6baca3aa6e2'
 
-        melody = [ord(x) for x in chunk.data]
+        melody = chunk.data #[ord(x) for x in chunk.data]
         self.make_melody(melody)
         # create a client object with access token
         client = soundcloud.Client(access_token=access_token)

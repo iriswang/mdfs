@@ -13,7 +13,8 @@ from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
 
 from argparse import ArgumentParser
 from base64 import b64decode, b64encode
-SERVER = "http://10.5.0.106:5000"
+#SERVER = "http://10.5.0.106:5000"
+SERVER = "http://localhost:5000"
 
 logging.basicConfig(level=logging.DEBUG)
 
