@@ -3,7 +3,7 @@ import logging
 logger = mp.log_to_stderr()
 logging.basicConfig(level=logging.DEBUG)
 
-from nodes import get_nodes, Chunk, init_nodes
+from nodes import get_nodes, Chunk, init_nodes, get_node
 
 CHUNK_SIZE = 10240
 REDUNDANCY = 1
@@ -27,6 +27,27 @@ def put_chunk(chunk_store):
     return (node, chunk)
 
 
+def get_chunk(chunk_store):
+    node, chunk = chunk_store
+    print node, chunk
+    node.get_chunk_data(chunk)
+    print "CHUNK", chunk
+    return (node, chunk)
+
+def get_chunks(chunk_list, access_tokens):
+    chunk_store = []
+    for chunk in chunk_list:
+        for node in chunk.info.keys():
+            chunk_store.append((get_node(node, access_tokens), chunk))
+    print chunk_store
+    dump = pool.map(get_chunk, chunk_store)
+    for chunk in chunk_list:
+        for node, c in dump:
+            if c.offset == chunk.offset:
+                chunk.data = c.data
+    print "CHUNK", chunk
+    return chunk_list
+
 def allocate_chunks_to_service(chunks, n=2):
     chunk_store = []
     for chunk in chunks:
@@ -34,7 +55,12 @@ def allocate_chunks_to_service(chunks, n=2):
         for node in nodes:
             chunk_store.append((node, chunk))
     dump = pool.map(put_chunk, chunk_store)
-    chunk_dump = map(lambda chunk_store: chunk_store[1].dump(), dump)
+    print dump
+    for chunk in chunks:
+        for node, c in dump:
+            if c.offset == chunk.offset:
+                chunk.info[node.name] = c.info[node.name]
+    chunk_dump = map(lambda chunk: chunk.dump(), chunks)
     return chunk_dump
 
 pool = mp.Pool(10)

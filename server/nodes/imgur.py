@@ -15,6 +15,7 @@ ZELDA = imread('nodes/img/zelda.png').flatten().tolist()
 
 class ImgurNode(Node):
 
+    name = 'imgur'
     client_id = '3eb3187308378ee'
     client_secret = '3cf14acc1c073c146a4520ef3cb26c2b113a0545'
 

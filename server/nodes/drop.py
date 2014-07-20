@@ -8,6 +8,7 @@ import hashlib
 
 class DBNode(Node):
 
+    name = 'dropbox'
     def __init__(self, access_token):
         Node.__init__(self, access_token)
 
@@ -28,5 +29,6 @@ class DBNode(Node):
     def get_chunk_data(self, chunk):
         access_token = "JkT9Fsx17gQAAAAAAAAAs1DAbvAU3sQrP1pJ8WiTdnG7HzQHE70idZ9Ph-GBuA3s"
         client = DropboxClient(access_token)
-        chunk.data, response = client.get_file_and_metadata(self.get_info('dropbox'))
+        f, response = client.get_file_and_metadata(chunk.info['dropbox'])
+        chunk.data = base64.b64decode(f.read())
 

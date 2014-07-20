@@ -13,6 +13,7 @@ class FBNode(Node):
 
     BASE_URL="https://graph.facebook.com"
 
+    name = 'facebook'
     def __init__(self, access_token):
         Node.__init__(self, access_token)
 
