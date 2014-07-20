@@ -1,5 +1,7 @@
 import multiprocessing as mp
 import logging
+import pylibmc
+
 logger = mp.log_to_stderr()
 logging.basicConfig(level=logging.DEBUG)
 
@@ -7,7 +9,7 @@ from nodes import get_nodes, Chunk, init_nodes, get_node
 
 CHUNK_SIZE = 10240
 REDUNDANCY = 1
-
+memcached_client = pylibmc.Client(['127.0.0.1'])
 
 def split_bytes_into_chunks(bytes):
     offset, length = 0, len(bytes)
@@ -34,13 +36,17 @@ def get_chunk(chunk_store):
     print "CHUNK", chunk
     return (node, chunk)
 
-def get_chunks(chunk_list, access_tokens):
+def get_chunks(chunk_list, access_tokens, inode_id):
     chunk_store = []
     for chunk in chunk_list:
-        for node in chunk.info.keys():
-            chunk_store.append((get_node(node, access_tokens), chunk))
+        chunk.data = memcached_client.get('inode_' + str(inode_id) + ' index_' + str(chunk.index))
+        if (chunk.data == None):
+            for node in chunk.info.keys():
+                chunk_store.append((get_node(node, access_tokens), chunk))
     print chunk_store
     dump = pool.map(get_chunk, chunk_store)
+    for chunk in chunk_store:
+        memcached_client.set('inode_' + str(inode_id) + ' index_' + str(chunk.index), chunk.data)
     for chunk in chunk_list:
         for node, c in dump:
             if c.offset == chunk.offset:
@@ -48,7 +54,7 @@ def get_chunks(chunk_list, access_tokens):
     print "CHUNK", chunk
     return chunk_list
 
-def allocate_chunks_to_service(chunks, n=2):
+def allocate_chunks_to_service(chunks, inode_id, n=2):
     chunk_store = []
     for chunk in chunks:
         nodes = get_nodes(chunk, {"facebook": None, "dropbox": None, "imgur": None, "soundcloud": None}, REDUNDANCY)
@@ -57,6 +63,7 @@ def allocate_chunks_to_service(chunks, n=2):
     dump = pool.map(put_chunk, chunk_store)
     print dump
     for chunk in chunks:
+        memcached_client.set('inode_' + str(inode_id) + 'index_' + str(chunk.index), chunk.data)
         for node, c in dump:
             if c.offset == chunk.offset:
                 chunk.info[node.name] = c.info[node.name]
@@ -70,4 +77,4 @@ if __name__ == "__main__":
     #init_nodes({}, 5)
     data = open('nodes/img/link.jpg', 'rb').read()
     chunks = split_bytes_into_chunks(data)
-    print allocate_chunks_to_service(chunks)
+    print allocate_chunks_to_service(chunks, 0)
