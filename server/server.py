@@ -1,9 +1,11 @@
 """
 MDFS
 """
+import os, logging
+
 from flask import render_template
 from flask import make_response
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for
 from auth import Authenticator
 from functools import wraps
 from fs import FileSystem
@@ -11,6 +13,8 @@ from fs import FileSystem
 import requests
 from urlparse import urlparse
 from werkzeug import url_decode
+from werkzeug import secure_filename
+from base64 import b64encode, b64decode
 
 app = Flask(__name__, static_url_path='')
 
@@ -27,7 +31,7 @@ NEW_PATH = "new_path"
 JSON_SUCCESS = "success"
 JSON_DATA = "data"
 JSON_ERROR = "error"
-ERROR_MESSAGE = "Error message: {error}"
+ERROR_MESSAGE = "Error message: {message}"
 
 # User parameters
 USERNAME = "username"
@@ -63,6 +67,11 @@ def render_login():
 @requires_authentication
 def index():
     return render_template('/index.html')
+
+@app.route("/files")
+@requires_authentication
+def files():
+    return render_template('/files.html')
 
 @app.route("/callback")
 def soundcloud_callback():
@@ -174,8 +183,11 @@ def check_path(f):
 def create():
     inode = int(get_inode(request))
     path = request.args[PATH]
-    app.fs.create(path, inode)
-
+    inode = app.fs.create(path, inode)
+    return {"inode": {
+        'id': inode.id,
+        'is_dir': inode.is_dir
+    }}
 
 @app.route("/mkdir", methods=['GET'])
 @requires_authentication
@@ -195,6 +207,18 @@ def readdir():
     files = app.fs.readdir(path, inode)
     return {"files": files}
 
+@app.route("/getattr", methods=['GET'])
+@check_path
+def getattr():
+    inode = int(get_inode(request))
+    path = request.args[PATH]
+    inode, size = app.fs.getattr(path, inode)
+    return {"inode": {
+        'id': inode.id,
+        'is_dir': inode.is_dir,
+        'size': size
+    }}
+
 
 @app.route("/rmdir", methods=['GET'])
 @requires_authentication
@@ -213,6 +237,25 @@ def unlink():
     path = request.args[PATH]
     app.fs.unlink(path, inode)
 
+@app.route("/read", methods=['GET'])
+@check_path
+def read():
+    path = request.args[PATH]
+    size = int(request.args['size'])
+    offset = int(request.args['offset'])
+    return {
+        "data": b64encode(app.fs.read(path, size, offset, inode, None))
+    }
+
+@app.route("/write", methods=['GET'])
+@check_path
+def write():
+    path = request.args[PATH]
+    data = bytearray(b64decode(request.args['data']))
+    offset = int(request.args['offset'])
+    return {
+        "data": b64encode(app.fs.write(path, data, offset, inode, None))
+    }
 
 @app.route("/rename", methods=['GET'])
 @requires_authentication
@@ -239,6 +282,36 @@ def get_inode(request):
     token = request.cookies.get(TOKEN)
     user = app.authenticator.get_user(token)
     return app.authenticator.get_inode(user)
+
+
+
+# Drag and Drop Uploading
+
+
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'pyc', 'py'])
+# def allowed_file(filename):
+#     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    try:
+        if request.method == 'POST':
+            f = request.files['file']
+            # f = request.files['xhr2upload'] # [0]
+            # if f and allowed_file(f.filename) <-- lol security amirite:
+            if f:
+                filename = secure_filename(f.filename)
+                f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                print filename
+                return jsonify({JSON_SUCCESS: True})
+        return jsonify({JSON_SUCCESS: False})
+    except Exception as e:
+        print str(e)
+        return jsonify({JSON_SUCCESS: False})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

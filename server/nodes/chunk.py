@@ -26,4 +26,4 @@ class Chunk:
 
     @staticmethod
     def load(json):
-        return Chunk(None, json['size'], json['size'], json['index'], json['offset'], json['info'])
+        return Chunk(None, json['size'], json['index'], json['offset'], json['info'])
