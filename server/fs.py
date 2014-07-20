@@ -46,6 +46,8 @@ class FileSystem:
     def getattr(self, path, root_inode_id, fh=None):
         try:
             inode = self.get_inode(path, root_inode_id)
+            if inode.is_dir:
+                return inode, 48
         except:
             raise Exception("File doesn't exist")
         chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))

@@ -153,7 +153,7 @@ _filenameToKind = function(filename) {
     if (filename.slice(-1) == "/") {
         return "folder"
     } else {
-        return "document"
+        return "file"
     }
 }
 

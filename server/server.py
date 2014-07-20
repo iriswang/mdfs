@@ -136,6 +136,7 @@ def add_service_token():
                             JSON_ERROR: None})
         except Exception as e:
             print e
+            logging.exception("CAUGHT EXCEPTION")
             return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
                             JSON_ERROR: ERROR_MESSAGE.
                             format(message=e.message)})
@@ -214,6 +215,7 @@ def getattr():
     inode = int(get_inode(request))
     path = request.args[PATH]
     inode, size = app.fs.getattr(path, inode)
+    print inode, size
     return {"inode": {
         'id': inode.id,
         'is_dir': inode.is_dir,
@@ -353,7 +355,5 @@ def download_file():
         print str(e)
         return jsonify({JSON_SUCCESS: False})
 
-
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")

@@ -82,6 +82,7 @@ $(document).ready(function() {
 	        	console.log(data);
 	        	if (data.success == true) {
 	        		console.log("YAYYYYYY file upload complete!");
+	        		mdfs.cd(mdfs.getCurrentDirectory());
 	        	}         
 	        }
 	    }); 
