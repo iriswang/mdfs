@@ -27,7 +27,7 @@ class SoundCloudNode(Node):
             'title': 'MDFS',
             'asset_data': open('temp.wav', 'rb'),
             "downloadable": "true",
-            "sharing": 'public'
+            "sharing": 'private'
         })
 
         # print track link
