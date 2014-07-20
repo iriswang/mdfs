@@ -10,6 +10,7 @@ logging.basicConfig(filename='soundcloud.log',level=logging.DEBUG)
 
 class SoundCloudNode(Node):
 
+    name = 'soundcloud'
     client_id = 'd3d8d0b3e2db7a1085678bd9478024dd'
     client_secret = 'db9de01a71abe026ba8cbef27373a21b'
 
@@ -32,7 +33,7 @@ class SoundCloudNode(Node):
             "downloadable": "true",
             "sharing": 'private'
         })
-        
+
         chunk.update_info("soundcloud", {
             "link": track.download_url
         })
@@ -42,7 +43,7 @@ class SoundCloudNode(Node):
         time.sleep(10)
 
         # temp = self.get_chunk_data(chunk)
-        
+
         # if bytearray(melody) == temp:
         #     logging.info('ITS THE SAME')
 
@@ -77,7 +78,7 @@ class SoundCloudNode(Node):
             waveData = waveFile.readframes(1)
             rst.append(struct.unpack("hh", waveData)[0])
         return bytearray(rst)
-        
+
 
     def make_melody(self, melody):
         noise_output = wave.open('temp.wav', 'w')
@@ -87,7 +88,7 @@ class SoundCloudNode(Node):
         for i in melody:
             packed_value = struct.pack('h', int(i))
             values.append(packed_value)
-            values.append(packed_value)            
+            values.append(packed_value)
 
         value_str = ''.join(values)
         noise_output.writeframes(value_str)

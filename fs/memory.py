@@ -1,28 +1,36 @@
 #!/usr/bin/env python
 
 import logging
+import requests
 
 from collections import defaultdict
-from errno import ENOENT
+from errno import ENOENT, ENOTEMPTY
 from stat import S_IFDIR, S_IFLNK, S_IFREG
 from sys import argv, exit
 from time import time
 
 from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
 
+from argparse import ArgumentParser
+from base64 import b64decode, b64encode
+SERVER = "http://localhost:5000"
+
+logging.basicConfig(level=logging.DEBUG)
+
 if not hasattr(__builtins__, 'bytes'):
     bytes = str
 
-class Memory(LoggingMixIn, Operations):
+class MDFS(LoggingMixIn, Operations):
     'Example memory filesystem. Supports only one level of files.'
 
-    def __init__(self):
+    def __init__(self, cookies):
         self.files = {}
         self.data = defaultdict(bytes)
         self.fd = 0
         now = time()
         self.files['/'] = dict(st_mode=(S_IFDIR | 0755), st_ctime=now,
                                st_mtime=now, st_atime=now, st_nlink=2)
+        self.cookies=cookies
 
     def chmod(self, path, mode):
         print "CHMOD", path
@@ -37,19 +45,31 @@ class Memory(LoggingMixIn, Operations):
 
     def create(self, path, mode):
         print "CREATE", path, mode
-        self.files[path] = dict(st_mode=(S_IFREG | mode), st_nlink=1,
-                                st_size=0, st_ctime=time(), st_mtime=time(),
-                                st_atime=time())
-
-        self.fd += 1
-        return self.fd
+        response = requests.get(SERVER+"/create", params={
+            "path": path
+        }, cookies=self.cookies)
+        return response.json()['data']['inode']['id']
 
     def getattr(self, path, fh=None):
         print "GETATTR", path
-        if path not in self.files:
+        response = requests.get(SERVER+"/getattr", params={
+            "path": path
+        }, cookies=self.cookies)
+        print response.text
+        json = response.json()
+        if json['data'] is None:
             raise FuseOSError(ENOENT)
+        else:
+            if json['data']['inode']['is_dir']:
+                stat = S_IFDIR
+            else:
+                stat = S_IFREG
+            now = time()
+            return dict(st_mode=(stat | 0777), st_nlink=1,
+                                st_size=0, st_ctime=time(), st_mtime=time(),
+                                st_atime=time())
 
-        return self.files[path]
+
 
     def getxattr(self, path, name, position=0):
         print "GETXATTR", path, name
@@ -67,24 +87,34 @@ class Memory(LoggingMixIn, Operations):
 
     def mkdir(self, path, mode):
         print "MKDIR", path
-        self.files[path] = dict(st_mode=(S_IFDIR | mode), st_nlink=2,
-                                st_size=0, st_ctime=time(), st_mtime=time(),
-                                st_atime=time())
+        requests.get(SERVER+"/mkdir", params={
+            "path": path
+        }, cookies=self.cookies)
 
-        self.files['/']['st_nlink'] += 1
     def open(self, path, flags):
         print "OPEN", path
         self.fd += 1
         return self.fd
 
     def read(self, path, size, offset, fh):
-        print "READ", path
-        print self.data[path][offset:offset + size]
+        print "READ", path, size, offset
         return "HI"
+        response = requests.get(SERVER+"/read", params={
+            "path": path,
+            "size": size,
+            "offset": offset
+        }, cookies=self.cookies)
+        print response.text
+        print b64decode(response.json()['data']['data'])
+        return str(b64decode(response.json()['data']['data']))
 
     def readdir(self, path, fh):
         print "READDIR", path
-        return ['.', '..'] + [x[1:] for x in self.files if x != '/']
+        response = requests.get(SERVER+"/readdir", params={
+            "path": path
+        }, cookies=self.cookies)
+        files = [x.encode('ascii', 'ignore').replace('/','') for x in response.json()['data']['files']]
+        return ['.', '..'] + files
 
     def readlink(self, path):
         print "READLINE", path
@@ -105,8 +135,12 @@ class Memory(LoggingMixIn, Operations):
 
     def rmdir(self, path):
         print "RMDIR", path
-        self.files.pop(path)
-        self.files['/']['st_nlink'] -= 1
+        response = requests.get(SERVER+"/rmdir", params={
+            "path": path
+        }, cookies=self.cookies)
+        print response.json()
+        if response.json()['success'] is False:
+            raise FuseOSError(ENOTEMPTY)
 
     def setxattr(self, path, name, value, options, position=0):
         print "SETXATTR"
@@ -127,35 +161,47 @@ class Memory(LoggingMixIn, Operations):
 
     def truncate(self, path, length, fh=None):
         print "TRUNCATE", path
+        return
         self.data[path] = self.data[path][:length]
         self.files[path]['st_size'] = length
 
     def unlink(self, path):
         print "UNLINK", path
-        self.files.pop(path)
+        response = requests.get(SERVER+"/unlink", params={
+            "path": path
+        }, cookies=self.cookies)
 
     def utimens(self, path, times=None):
+        return
         now = time()
         atime, mtime = times if times else (now, now)
         self.files[path]['st_atime'] = atime
         self.files[path]['st_mtime'] = mtime
 
     def write(self, path, data, offset, fh):
-        print "WRITE", path
-        self.data[path] = self.data[path][:offset] + data
-        self.files[path]['st_size'] = len(self.data[path])
-        return len(data)
+        print "WRITE", path, data, offset
+        response = requests.get(SERVER+"/write", params={
+            "path": path,
+            "data": b64encode(data),
+            "offset": offset
+        }, cookies=self.cookies)
+        print response.text
+        return response.json()['data']['data_written']
 
 
 if __name__ == '__main__':
-    if len(argv) != 2:
-        print('usage: %s <mountpoint>' % argv[0])
-        exit(1)
+    argparser = ArgumentParser()
+
+    argparser.add_argument('username')
+    argparser.add_argument('password')
+    argparser.add_argument('mountpoint')
+
+    args = argparser.parse_args()
 
     logging.getLogger().setLevel(logging.DEBUG)
-    mem = Memory()
-    print "CREATING"
-    dir(mem)
-    mem.create("/sup", 33188)
-    fuse = FUSE(mem, argv[1], foreground=True)
-
+    response = requests.post(SERVER+"/login", data={
+        'username': args.username,
+        'password': args.password
+    })
+    mem = MDFS(response.cookies)
+    fuse = FUSE(mem, args.mountpoint, foreground=True)

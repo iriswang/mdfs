@@ -11,6 +11,7 @@ from fs import FileSystem
 import requests
 from urlparse import urlparse
 from werkzeug import url_decode
+from base64 import b64encode, b64decode
 
 app = Flask(__name__, static_url_path='')
 
@@ -27,7 +28,7 @@ NEW_PATH = "new_path"
 JSON_SUCCESS = "success"
 JSON_DATA = "data"
 JSON_ERROR = "error"
-ERROR_MESSAGE = "Error message: {error}"
+ERROR_MESSAGE = "Error message: {message}"
 
 # User parameters
 USERNAME = "username"
@@ -171,37 +172,69 @@ def check_path(f):
 @check_path
 def create():
     path = request.args[PATH]
-    app.fs.create(path)
-
+    inode = app.fs.create(path, None)
+    return {"inode": {
+        'id': inode.id,
+        'is_dir': inode.is_dir
+    }}
 
 @app.route("/mkdir", methods=['GET'])
 @check_path
 def mkdir():
     path = request.args[PATH]
-    app.fs.mkdir(path)
+    app.fs.mkdir(path, None)
 
 
 @app.route("/readdir", methods=['GET'])
 @check_path
 def readdir():
     path = request.args[PATH]
-    files = app.fs.readdir(path)
+    files = app.fs.readdir(path, None)
     return {"files": files}
+
+@app.route("/getattr", methods=['GET'])
+@check_path
+def getattr():
+    path = request.args[PATH]
+    inode = app.fs.getattr(path, None)
+    return {"inode": {
+        'id': inode.id,
+        'is_dir': inode.is_dir
+    }}
 
 
 @app.route("/rmdir", methods=['GET'])
 @check_path
 def rmdir():
     path = request.args[PATH]
-    app.fs.rmdir(path)
+    app.fs.rmdir(path, None)
 
 
 @app.route("/unlink", methods=['GET'])
 @check_path
 def unlink():
     path = request.args[PATH]
-    app.fs.unlink(path)
+    app.fs.unlink(path, None)
 
+@app.route("/read", methods=['GET'])
+@check_path
+def read():
+    path = request.args[PATH]
+    size = int(request.args['size'])
+    offset = int(request.args['offset'])
+    return {
+        "data": b64encode(app.fs.read(path, size, offset, None, None))
+    }
+
+@app.route("/write", methods=['GET'])
+@check_path
+def write():
+    path = request.args[PATH]
+    data = b64decode(request.args['data'])
+    offset = int(request.args['offset'])
+    return {
+        "data": b64encode(app.fs.write(path, data, offset, None, None))
+    }
 
 @app.route("/rename", methods=['GET'])
 def rename():
