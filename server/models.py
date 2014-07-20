@@ -8,7 +8,7 @@ class INode(Base):
     __tablename__ = "inode"
     id = Column("id", Integer, primary_key=True)
     is_dir = Column("is_dir", Boolean, default=False)
-    name = Column("name", String(255), nullable=False)
+    name = Column("name", String(255))
     parent_inode = Column("parent_inode", Integer, ForeignKey("inode.id"))
     UniqueConstraint("name", "parent_inode")
 

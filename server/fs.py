@@ -28,13 +28,10 @@ class FileSystem:
         parent_inode = self.get_inode(split_path[0], root_inode_id)
         new_name = split_path[1]
         try:
-            if parent_inode is None:
-                new_inode = INode(name=new_name)
+            if parent_inode.is_dir:
+                new_inode = INode(name=new_name, parent_inode=parent_inode.id)
             else:
-                if parent_inode.is_dir:
-                    new_inode = INode(name=new_name, parent_inode=parent_inode.id)
-                else:
-                    raise Exception("Parent is not a directory")
+                raise Exception("Parent is not a directory")
             session.add(new_inode)
             session.commit()
             self.r_server.set("inode_"+str(new_inode.id), json.dumps([]))
@@ -44,7 +41,10 @@ class FileSystem:
 
     def getattr(self, path, root_inode_id, fh=None):
         inode = self.get_inode(path, root_inode_id)
-        return inode
+        chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
+        chunk_list = map(Chunk.load, chunk_json)
+        file_length = sum([x.size for x in chunk_list])
+        return inode, file_length
 
     def mkdir(self, path, root_inode_id, mode=None):
         session = self.session()
@@ -52,13 +52,10 @@ class FileSystem:
         parent_inode = self.get_inode(split_path[0], root_inode_id)
         new_inode = split_path[1]
         try:
-            if parent_inode is None:
-                new_inode = INode(is_dir=True, name=new_inode)
+            if parent_inode.is_dir:
+                new_inode = INode(is_dir=True, name=new_inode, parent_inode=parent_inode.id)
             else:
-                if parent_inode.is_dir:
-                    new_inode = INode(is_dir=True, name=new_inode, parent_inode=parent_inode.id)
-                else:
-                    raise Exception("parent is not a directory")
+                raise Exception("parent is not a directory")
             session.add(new_inode)
             session.commit()
         finally:
@@ -87,7 +84,7 @@ class FileSystem:
                 "soundcloud": None,
                 "imgur": None,
                 "dropbox": None
-            })
+            }, inode.id)
             bytes = bytearray([])
             for chunk in chunk_dump:
                 print chunk
@@ -105,12 +102,9 @@ class FileSystem:
         session = self.session()
         folder_path = self.get_inode(path, root_inode_id)
         try:
-            if folder_path is None:
-                files = session.query(INode).filter_by(parent_inode=None)
-            else:
-                if not folder_path.is_dir:
-                    raise Exception("Not a directory")
-                files = session.query(INode).filter_by(parent_inode=folder_path.id)
+            if not folder_path.is_dir:
+                raise Exception("Not a directory")
+            files = session.query(INode).filter_by(parent_inode=folder_path.id)
             for file_obj in files:
                 if file_obj.is_dir:
                     result.append(file_obj.name + "/")
@@ -127,13 +121,10 @@ class FileSystem:
         new_split_path = os.path.split(new)
         new_parent_inode = self.get_inode(new_split_path[0], root_inode_id)
         try:
-            if new_parent_inode is None:
-                old_inode.parent_inode = None
+            if new_parent_inode.is_dir:
+                old_inode.parent_inode = new_parent_inode.id
             else:
-                if new_parent_inode.is_dir:
-                    old_inode.parent_inode = new_parent_inode.id
-                else:
-                    raise Exception("Parent is not a directory")
+                raise Exception("Parent is not a directory")
             old_inode.name = new_split_path[1]
             session.add(old_inode)
             session.commit()
@@ -147,14 +138,9 @@ class FileSystem:
         split_path = os.path.split(path)
         parent_inode = self.get_inode(split_path[0], root_inode_id)
         try:
-            if parent_inode is None:
-                inode_to_delete = session.query(INode).\
-                    filter_by(parent_inode=None,
-                              name=split_path[1], is_dir=True).one()
-            else:
-                inode_to_delete = session.query(INode).\
-                    filter_by(parent_inode=parent_inode.id,
-                              name=split_path[1], is_dir=True).one()
+            inode_to_delete = session.query(INode).\
+                filter_by(parent_inode=parent_inode.id,
+                            name=split_path[1], is_dir=True).one()
             session.delete(inode_to_delete)
             session.commit()
         finally:
@@ -173,7 +159,10 @@ class FileSystem:
                 session.close()
 
     def write(self, path, data, offset, root_inode_id, fh=None):
+
         try:
+            print type(data)
+            print "DATA", type(data[0])
             inode = self.get_inode(path, root_inode_id)
             chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
             chunk_list = map(Chunk.load, chunk_json)
@@ -185,7 +174,9 @@ class FileSystem:
 
             start = offset / CHUNK_SIZE
             end = (end_offset - 1) / CHUNK_SIZE
-            if (file_length > offset):
+            print file_length
+            print offset
+            if (offset > 0 and file_length < offset):
                 raise Exception('File length shorter than offset')
 
             chunks_to_get = []
@@ -200,7 +191,7 @@ class FileSystem:
                 "soundcloud": None,
                 "imgur": None,
                 "dropbox": None
-            })
+            }, inode.id)
             for got_chunk in got_chunks:
                 chunk_list[got_chunk.index].data = got_chunk.data
 
@@ -233,7 +224,7 @@ class FileSystem:
                 chunk_list.append(chunk)
 
             print "CHUNKLIST", chunk_list[start:end+1]
-            chunk_dump = chunk_json[0:start] + allocate_chunks_to_service(chunk_list[start:end+1]) + chunk_json[end+1:]
+            chunk_dump = chunk_json[0:start] + allocate_chunks_to_service(chunk_list[start:end+1], inode.id) + chunk_json[end+1:]
             print "KEY", "inode_"+str(inode.id), json.dumps(chunk_dump)
             self.r_server.set("inode_"+str(inode.id), json.dumps(chunk_dump))
             print json.loads(self.r_server.get("inode_"+str(inode.id)))
@@ -242,6 +233,16 @@ class FileSystem:
         except:
             logging.exception("OH HO")
 
+    def create_user_inode(self):
+        session = self.session()
+        try:
+            new_inode = INode(parent_inode=None, is_dir=True)
+            session.add(new_inode)
+            session.commit()
+            return new_inode.id
+        finally:
+            session.close()
+
     def get_inode(self, path, root_inode_id):
         session = self.session()
         path_parts = split_path(path)
@@ -249,11 +250,7 @@ class FileSystem:
         try:
             for count, part in enumerate(path_parts):
                 if count == 0:
-                    continue
-                    #curr_inode = session.query(INode).filter(INode.id == root_inode_id).one()
-                elif count == 1:
-                    curr_inode = session.query(INode).\
-                        filter_by(parent_inode=None, name=part).one()
+                    curr_inode = session.query(INode).filter(INode.id == root_inode_id).one()
                 else:
                     curr_inode = session.query(INode).\
                         filter_by(parent_inode=curr_inode.id, name=part).one()
