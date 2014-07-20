@@ -251,6 +251,7 @@ class FileSystem:
             session.close()
 
     def get_inode(self, path, root_inode_id):
+        print "GETTING INODE", path, root_inode_id
         session = self.session()
         path_parts = split_path(path)
         curr_inode = None

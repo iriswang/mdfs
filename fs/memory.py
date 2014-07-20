@@ -110,6 +110,8 @@ class MDFS(LoggingMixIn, Operations):
         response = requests.get(SERVER+"/readdir", params={
             "path": path
         }, cookies=self.cookies)
+        print response.text
+        print response.json()
         files = [x.encode('ascii', 'ignore').replace('/','') for x in response.json()['data']['files']]
         return ['.', '..'] + files
 
