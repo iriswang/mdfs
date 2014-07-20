@@ -11,6 +11,7 @@ from functools import wraps
 from fs import FileSystem
 from redis import Redis
 from fs import DB_NUM
+from chunker import split_bytes_into_chunks, allocate_chunks_to_service
 
 r_server = Redis(DB_NUM)
 
@@ -313,12 +314,12 @@ def upload_file():
 
                 # TODO (SHARAD) this writes file to uploads
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                inode = app.fs.get_inode(path)
-                app.fs.create(path+"/"+filename, inode)
-                new_inode = fs.get_inode(path + "/" + filename, root_inode)
+                inode = app.fs.get_inode(path, root_inode)
+                app.fs.create(path+"/"+filename, root_inode)
+                new_inode = app.fs.get_inode(path + "/" + filename, root_inode)
                 data = open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb').read()
                 chunks = split_bytes_into_chunks(data)
-                chunk_dump = allocate_chunks_to_service(chunks)
+                chunk_dump = allocate_chunks_to_service(chunks, new_inode.id)
                 r_server.set("inode_"+str(new_inode.id), json.dumps(chunk_dump))
                 return jsonify({JSON_SUCCESS: True})
         return jsonify({JSON_SUCCESS: False})
