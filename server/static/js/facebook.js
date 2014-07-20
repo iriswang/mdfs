@@ -1,7 +1,7 @@
   // This is called with the results from from FB.getLoginStatus().
   function statusChangeCallback(response) {
     console.log('statusChangeCallback');
-    window.url = "https://graph.facebook.com/" + response.authResponse.userID + "/picture?type=large";
+    // window.url = "https://graph.facebook.com/" + response.authResponse.userID + "/picture?type=large";
     // localStorage(url);
 
    

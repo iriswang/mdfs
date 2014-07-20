@@ -62,8 +62,13 @@ mdfs.ls = function(path, filenames){
 
         // for each row add current directory to newPath
         var newPath = $(this).data("cd");
-        console.log(newPath);
-        mdfs.cd(newPath);
+
+        if (_filenameToKind($(this).data('filename')) == 'document') {
+            mdfs.downloadFile(mdfs.getCurrentDirectory(), $(this).data('filename'));
+        } else {
+            mdfs.cd(newPath);
+        }
+        
     });
 }
 
@@ -75,11 +80,6 @@ mdfs.setCurrentDirectory = function(path) {
 
 mdfs.getCurrentDirectory = function() {
      return localStorage.getItem("mdfspath");
-}
-
-/* dive down into the directory named dirname */
-mdfs.dive = function(dirname) {
-    console.log("DIVE INTO" + dirname);
 }
 
 /* assumes no / in dir names <-- lol wat */
@@ -109,7 +109,18 @@ mdfs.setNavToCurrentDirectory = function(path) {
 }
 
 mdfs.downloadFile = function(path, filename) {
-    // downloadstheFile 
+    var data = {path: path, filename: filename};
+    $.ajax({
+        type: "GET",
+        url: "/download",
+        data: data,
+        success: function(json)  {
+            if (json.success == true) {
+                console.log("heres your file");
+            }
+        },
+        dataType: "json"
+    });
 }
 
 /* individual nav layers layer: layer name ... link: path to layer */
@@ -127,7 +138,7 @@ _lsHTML = function(filenames) {
     
     var body = "<tbody>";
     $(filenames).each(function(index, f) {
-        body += "<tr class='table-row' data-cd='" + _appendCurrentDirectoryToPath(f) + "'><td class='filename-td'>" + _filenameToIconNameFormat(f) + "</td><td>" + _filenameToKind(f) + "</td></tr>";
+        body += "<tr class='table-row' data-filename='"+ f + "' data-cd='" + _appendCurrentDirectoryToPath(f) + "'><td class='filename-td'>" + _filenameToIconNameFormat(f) + "</td><td>" + _filenameToKind(f) + "</td></tr>";
     });
     body += "</tbody>"
     return header + body + "</table>";
