@@ -2,9 +2,15 @@
 MDFS
 """
 from flask import render_template
+from flask import make_response
 from flask import Flask, request, jsonify
 from auth import Authenticator
 from functools import wraps
+
+import requests
+from urlparse import urlparse
+from werkzeug import url_decode
+
 app = Flask(__name__, static_url_path='')
 
 # Arg parameters
@@ -23,49 +29,40 @@ ERROR_MESSAGE = "Error message: {error}"
 USERNAME = "username"
 PASSWORD = "password"
 
+FB_CLIENT_ID = "1570250713202324"
+FB_CLIENT_SECRET = "25fdcad49fc80d5fa7da9be620d9d122"
+
 app.authenticator = Authenticator()
-
-
-@app.route("/")
-def index():
-    return render_template('index.html')
-
-@app.route("/callback")
-def soundcloud_callback():
-    return render_template('/callback.html')
 
 def requires_authentication(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         req_args = request.args
-        if TOKEN in req_args.keys():
-            if app.authenticator.check_token(req_args[TOKEN]):
+        token = request.cookies.get(TOKEN)
+        if token:
+            if app.authenticator.check_token(token):
                 return f(*args, **kwargs)
-        return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-                        JSON_ERROR: ERROR_MESSAGE.
-                        format(error="Not authenticated")})
+        return render_template('/login.html')
     return decorated
-
-
-# @app.route('/login', methods=['GET'])
-# def authenticate_request():
-#     req_args = request.args
-#     if USERNAME in req_args.keys() and PASSWORD in req_args.keys():
-#         username = req_args[USERNAME]
-#         password = req_args[PASSWORD]
-#         if app.authenticator.check_password(username, password):
-#             new_token = app.authenticator.gen_token(username)
-#             return jsonify({JSON_SUCCESS: True, JSON_DATA:
-#                             {TOKEN: new_token.encode('utf8')},
-#                             JSON_ERROR: None})
-#     return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-#                     JSON_ERROR: ERROR_MESSAGE.
-#                     format(error="invalid username or password/ missing fields")})
-
 
 @app.route('/login', methods=['GET'])
 def render_login():
-    return render_template('/login.html')
+    
+    # if token is invalid, redirect user to login page
+    token = request.cookies.get(TOKEN)
+    if not app.authenticator.check_token(token):
+        return render_template('/login.html')
+    else:
+        return index()
+
+@app.route("/")
+@requires_authentication
+def index():
+    return render_template('/index.html')
+
+@app.route("/callback")
+def soundcloud_callback():
+    return render_template('/callback.html')
 
 @app.route('/login', methods=['POST'])
 def login_user():
@@ -87,59 +84,43 @@ def login_user():
         new_token = app.authenticator.gen_token(username)
         resp = make_response(render_template('/index.html'))
         resp.set_cookie(TOKEN, new_token.encode('utf8'))
-        print resp
         return resp
-    render_login()
+    return render_login()
 
-    # req_json = request.get_json()
-
-    #     try:
-    #         app.authenticator.add_user(username, password)
-    #     except Exception as e:
-    #         return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-    #                         JSON_ERROR: ERROR_MESSAGE.
-    #                         format(field=e.message)})
-    #     return jsonify({JSON_SUCCESS: True, JSON_DATA: None,
-    #                     JSON_ERROR: None})
-    # else:
-    #     return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-    #                     JSON_ERROR: ERROR_MESSAGE.
-    #                     format(message="missing username or password fields")})
-    #     resp = make_response(render_template('/index.html'))
-    #     resp.set_cookie()
-    #     return resp
-
-@app.route('/user', methods=['DELETE'])
-@requires_authentication
-def delete_user():
-    req_args = request.args
-    if USERNAME in req_args.keys():
-        username = req_args[USERNAME]
-        try:
-            app.authenticator.delete_user(username)
-            return jsonify({JSON_SUCCESS: True, JSON_DATA: None,
-                            JSON_ERROR: None})
-        except Exception as e:
-            return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-                            JSON_ERROR: ERROR_MESSAGE.format(message=e.message)})
-    return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-                        JSON_ERROR: ERROR_MESSAGE.format(field="username or password")})
-
+# @app.route('/user', methods=['DELETE'])
+# @requires_authentication
+# def delete_user():
+#     req_args = request.args
+#     if USERNAME in req_args.keys():
+#         username = req_args[USERNAME]
+#         try:
+#             app.authenticator.delete_user(username)
+#             return jsonify({JSON_SUCCESS: True, JSON_DATA: None,
+#                             JSON_ERROR: None})
+#         except Exception as e:
+#             return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+#                             JSON_ERROR: ERROR_MESSAGE.format(message=e.message)})
+#     return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+#                         JSON_ERROR: ERROR_MESSAGE.format(field="username or password")})
 
 @app.route('/initialize', methods=['POST'])
 @requires_authentication
 def add_service_token():
-    req_json = request.get_json()
-    print req_json
-    req_args = request.args
-    if SERVICE in req_json.keys() and SERVICE_TOKEN in req_json.keys():
+    print "ADD SERVICE TOKEN"
+    req_json = request.form
+    token = get_token_from_cookie(request)
+    if SERVICE in req_json and SERVICE_TOKEN in req_json:
+        access_token = req_json[SERVICE_TOKEN]
+        # TODO (Yuxin) assumes it never expires...
+        if req_json[SERVICE] == 'facebook':
+            access_token = get_extended_fb_token(req_json[SERVICE_TOKEN])
         try:
-            print req_args[TOKEN]
-            app.authenticator.add_service_token(req_args[TOKEN], req_json[SERVICE],
-                                                req_json[SERVICE_TOKEN])
+            app.authenticator.add_service_token(token, req_json[SERVICE],
+                                                access_token)
             return jsonify({JSON_SUCCESS: True, JSON_DATA: None,
                             JSON_ERROR: None})
         except Exception as e:
+            print e
             return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
                             JSON_ERROR: ERROR_MESSAGE.
                             format(message=e.message)})
@@ -148,6 +129,19 @@ def add_service_token():
                         JSON_ERROR: ERROR_MESSAGE.
                         format(message="missing service field")})
 
+def get_token_from_cookie(request):
+    return request.cookies.get(TOKEN)
+
+def get_extended_fb_token(access_token):
+    # print access_token
+    payload = {'client_id': FB_CLIENT_ID, 'client_secret': FB_CLIENT_SECRET, 'grant_type': 'fb_exchange_token', 'fb_exchange_token': access_token}
+    r = requests.get("https://graph.facebook.com/oauth/access_token", params=payload)
+    try:
+        access_token = url_decode(r.text).get('access_token')
+    except Exception as e:
+        print '(WARNING) Failed to parse retrieve long-lived access token', r.text
+    print 'EXPIRES: ' + url_decode(r.text).get('expires')
+    return access_token
 
 if __name__ == '__main__':
     app.run(debug=True)
