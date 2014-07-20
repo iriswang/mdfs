@@ -23,6 +23,7 @@ class FileSystem:
         self.r_server = Redis(db=DB_NUM)
 
     def create(self, path, root_inode_id, mode=None):
+        print "CREATING"
         session = self.session()
         split_path = os.path.split(path)
         parent_inode = self.get_inode(split_path[0], root_inode_id)
@@ -32,15 +33,21 @@ class FileSystem:
                 new_inode = INode(name=new_name, parent_inode=parent_inode.id)
             else:
                 raise Exception("Parent is not a directory")
+            print "NEW INODE", new_inode
             session.add(new_inode)
             session.commit()
             self.r_server.set("inode_"+str(new_inode.id), json.dumps([]))
             return new_inode
+        except:
+            logging.exception("OHONO")
         finally:
             session.close()
 
     def getattr(self, path, root_inode_id, fh=None):
-        inode = self.get_inode(path, root_inode_id)
+        try:
+            inode = self.get_inode(path, root_inode_id)
+        except:
+            raise Exception("File doesn't exist")
         chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))
         chunk_list = map(Chunk.load, chunk_json)
         file_length = sum([x.size for x in chunk_list])
@@ -64,7 +71,7 @@ class FileSystem:
     def open(self, path, flags, root_inode_id):
         pass
 
-    def read(self, path, size, offset, fh, root_inode_id):
+    def read(self, path, size, offset, root_inode_id, fh):
         try:
             inode = self.get_inode(path, root_inode_id)
             chunk_json = json.loads(self.r_server.get("inode_"+str(inode.id)))

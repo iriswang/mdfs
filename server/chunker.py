@@ -10,7 +10,7 @@ mc = memcache.Client(["127.0.0.1:11211"])
 
 
 CHUNK_SIZE = 10240
-REDUNDANCY = 1
+REDUNDANCY = 2
 
 def split_bytes_into_chunks(bytes):
     offset, length = 0, len(bytes)
@@ -60,6 +60,7 @@ def get_chunks(chunk_list, access_tokens, inode_id):
 def allocate_chunks_to_service(chunks, inode_id, n=2):
     chunk_store = []
     for chunk in chunks:
+        mc.set('inode_' + str(inode_id) + 'index_' + str(chunk.index), chunk.data)
         nodes = get_nodes(chunk, {"facebook": None, "dropbox": None, "imgur": None, "soundcloud": None}, REDUNDANCY)
         for node in nodes:
             chunk_store.append((node, chunk))
@@ -67,7 +68,6 @@ def allocate_chunks_to_service(chunks, inode_id, n=2):
     dump = pool.map(put_chunk, chunk_store)
     print "DUMP", dump
     for chunk in chunks:
-        mc.set('inode_' + str(inode_id) + 'index_' + str(chunk.index), chunk.data)
         for node, c in dump:
             if c.offset == chunk.offset:
                 chunk.info[node.name] = c.info[node.name]

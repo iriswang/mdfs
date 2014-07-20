@@ -158,14 +158,14 @@ def check_path(f):
     def decorated(*args, **kwargs):
         req_args = request.args
         if PATH in req_args.keys():
-            #try:
-            data = f(*args, **kwargs)
-            return jsonify({JSON_SUCCESS: True, JSON_DATA: data,
-                            JSON_ERROR: None})
-            #except Exception as e:
-                #return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
-                                #JSON_ERROR: ERROR_MESSAGE.
-                                #format(message=e.message)})
+            try:
+                data = f(*args, **kwargs)
+                return jsonify({JSON_SUCCESS: True, JSON_DATA: data,
+                                JSON_ERROR: None})
+            except Exception as e:
+                return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
+                                JSON_ERROR: ERROR_MESSAGE.
+                                format(message=e.message)})
         else:
             return jsonify({JSON_SUCCESS: False, JSON_DATA: None,
                             JSON_ERROR: ERROR_MESSAGE.
@@ -237,15 +237,19 @@ def unlink():
 def read():
     path = request.args[PATH]
     size = int(request.args['size'])
+    inode = int(get_inode(request))
     offset = int(request.args['offset'])
+    data = app.fs.read(path, size, offset, inode, None)
+    print data
     return {
-        "data": b64encode(app.fs.read(path, size, offset, inode, None))
+        "data": b64encode(data)
     }
 
 @app.route("/write", methods=['GET'])
 @check_path
 def write():
     path = request.args[PATH]
+    inode = int(get_inode(request))
     data = bytearray(b64decode(request.args['data']))
     offset = int(request.args['offset'])
     return {

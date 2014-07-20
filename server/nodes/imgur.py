@@ -23,10 +23,9 @@ class ImgurNode(Node):
         Node.__init__(self, access_token)
 
     def put_chunk_data(self, chunk):
-        image = [ord(x) for x in chunk.data]
+        image = chunk.data
         if (len(chunk.data) < 10240):
             image.extend([0] * (10240 - len(chunk.data)))
-
         new_img =  [x ^ y for x, y in zip(ZELDA, image)]
         io_image = cStringIO.StringIO()
         imsave(io_image, np.array(new_img).reshape((80, 128)), format='png')
@@ -45,7 +44,6 @@ class ImgurNode(Node):
         chunk.update_info("imgur", {
             "link": result.json()['data']['link']
         })
-        self.get_chunk_data(chunk)
 
 
     def get_chunk_data(self, chunk):
