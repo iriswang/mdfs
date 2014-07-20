@@ -103,7 +103,7 @@ class MDFS(LoggingMixIn, Operations):
             "size": size,
             "offset": offset
         }, cookies=self.cookies)
-        return str(b64decode(b64decode(response.json()['data']['data'])))
+        return str(b64decode(response.json()['data']['data']))
 
     def readdir(self, path, fh):
         print "READDIR", path
@@ -179,7 +179,7 @@ class MDFS(LoggingMixIn, Operations):
         print "WRITE", path, data, offset
         response = requests.get(SERVER+"/write", params={
             "path": path,
-            "data": b64encode(b64encode(data)),
+            "data": b64encode(data),
             "offset": offset
         }, cookies=self.cookies)
         print response.text

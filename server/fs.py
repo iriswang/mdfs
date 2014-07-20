@@ -90,7 +90,7 @@ class FileSystem:
                 "soundcloud": None,
                 "imgur": None,
                 "dropbox": None
-            })
+            }, inode.id)
             bytes = bytearray([])
             for chunk in chunk_dump:
                 print chunk
@@ -193,7 +193,7 @@ class FileSystem:
             end = (end_offset - 1) / CHUNK_SIZE
             print file_length
             print offset
-            if (offset > 0 and file_length <= offset):
+            if (offset > 0 and file_length < offset):
                 raise Exception('File length shorter than offset')
 
             chunks_to_get = []
@@ -208,7 +208,7 @@ class FileSystem:
                 "soundcloud": None,
                 "imgur": None,
                 "dropbox": None
-            })
+            }, inode.id)
             for got_chunk in got_chunks:
                 chunk_list[got_chunk.index].data = got_chunk.data
 
@@ -241,7 +241,7 @@ class FileSystem:
                 chunk_list.append(chunk)
 
             print "CHUNKLIST", chunk_list[start:end+1]
-            chunk_dump = chunk_json[0:start] + allocate_chunks_to_service(chunk_list[start:end+1]) + chunk_json[end+1:]
+            chunk_dump = chunk_json[0:start] + allocate_chunks_to_service(chunk_list[start:end+1], inode.id) + chunk_json[end+1:]
             print "KEY", "inode_"+str(inode.id), json.dumps(chunk_dump)
             self.r_server.set("inode_"+str(inode.id), json.dumps(chunk_dump))
             print json.loads(self.r_server.get("inode_"+str(inode.id)))
