@@ -43,7 +43,6 @@ def get_chunks(chunk_list, access_tokens, inode_id):
     for chunk in chunk_list:
         print "DOING MC"
         chunk.data = mc.get('inode_' + str(inode_id) + 'index_' + str(chunk.index))
-        print chunk.data
         if chunk.data == None:
             for node in chunk.info.keys():
                 chunk_store.append((get_node(node, access_tokens), chunk))
