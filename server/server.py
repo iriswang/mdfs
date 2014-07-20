@@ -306,6 +306,7 @@ def upload_file():
         if request.method == 'POST':
             path = request.args['path']
             f = request.files['file']
+            root_inode = int(get_inode(request))
             # if f and allowed_file(f.filename) <-- lol security amirite:
             if f:
                 filename = secure_filename(f.filename)
@@ -314,7 +315,7 @@ def upload_file():
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 inode = app.fs.get_inode(path)
                 app.fs.create(path+"/"+filename, inode)
-                new_inode = app.fs.get_inode(path + "/" + filename)
+                new_inode = fs.get_inode(path + "/" + filename, root_inode)
                 data = open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb').read()
                 chunks = split_bytes_into_chunks(data)
                 chunk_dump = allocate_chunks_to_service(chunks)
