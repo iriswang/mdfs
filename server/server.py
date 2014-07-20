@@ -319,7 +319,10 @@ def upload_file():
                 try:
                     app.fs.getattr(path+"/"+filename, root_inode)
                 except:
-                    app.fs.create(path+"/"+filename, root_inode)
+                    try:
+                        app.fs.create(path+"/"+filename, root_inode)
+                    except:
+                        pass
                     new_inode = app.fs.get_inode(path + "/" + filename, root_inode)
                     data = bytearray(open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb').read())
                     chunks = split_bytes_into_chunks(data)
