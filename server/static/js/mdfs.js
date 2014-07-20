@@ -33,10 +33,14 @@ mdfs.cd = function(path) {
     $.ajax({
         type: "GET",
         url: "/readdir",
-        data: {path: path},
+        data: {path: _stripTrailingSlash(path)},
         success: function(json)  {
-            mdfs.ls(path, json.data.files);
+            console.log(json);
+            console.log('cd into: ' + path);
+            // first thing to do, change the directory
             mdfs.setCurrentDirectory(path);
+
+            mdfs.ls(path, json.data.files);
             mdfs.setNavToCurrentDirectory(path);
         },
         dataType: "json"
@@ -47,15 +51,23 @@ mdfs.cd = function(path) {
 mdfs.ls = function(path, filenames){
     console.log(filenames);
     $(".directory-container").html(_lsHTML(filenames));
+    $(".table-row").click(function() {
+
+        // for each row add current directory to newPath
+        var newPath = $(this).data("cd");
+        console.log(newPath);
+        mdfs.cd(newPath);
+    });
 }
 
 /* string representing path */
 mdfs.setCurrentDirectory = function(path) {
-    localStorage.setItem("mdfs_path", path);
+    console.log('current directory set to: ' + path);
+    return localStorage.setItem("mdfspath", path);
 }
 
 mdfs.getCurrentDirectory = function() {
-     localStorage.getItem("mdfs_path");
+     return localStorage.getItem("mdfspath");
 }
 
 /* dive down into the directory named dirname */
@@ -66,9 +78,26 @@ mdfs.dive = function(dirname) {
 /* assumes no / in dir names <-- lol wat */
 mdfs.setNavToCurrentDirectory = function(path) {
     var layers = path.split('/');
+    console.log("path: " + path + " split into layers: " + layers)
+    var html = "<div class='navigation-bar-container'>";
+
+    /* build up link */
+    var soFarLink = "/";
+    /* deal with root '/' */
+    html += _navHTML(soFarLink, "/");
     $(layers).each(function(index, layer) {
-        /* need to send path up to that layer */
-        // _
+        if (layer) {
+            /* theres usually a trailing / but it got split off... */
+            layer = layer + "/";
+            soFarLink = soFarLink + layer;
+            html += _navHTML(soFarLink, layer);
+        }
+    });
+    console.log(html);
+    $(".navigation-container").html(html + "</div>");
+    $(".nav-layer").click(function() {
+        var newPath = $(this).data("cd");
+        mdfs.cd(newPath);
     });
 }
 
@@ -76,9 +105,10 @@ mdfs.downloadFile = function(path, filename) {
     // downloadstheFile 
 }
 
-/* individual nav layers layer: string */
-_navHTML = function(layer) {
-
+/* individual nav layers layer: layer name ... link: path to layer */
+_navHTML = function(link, layer) {
+    var html = "<a class='nav-layer' href='#' data-cd='" + link + "'>" + layer + "</a>";
+    return html;
 }
 
 _lsHTML = function(filenames) {
@@ -90,7 +120,7 @@ _lsHTML = function(filenames) {
     
     var body = "<tbody>";
     $(filenames).each(function(index, f) {
-        body += "<tr class='table-row' data-filename='" + f + "'><td class='filename-td'>" + _filenameToIconNameFormat(f) + "</td><td>" + _filenameToKind(f) + "</td></tr>";
+        body += "<tr class='table-row' data-cd='" + _appendCurrentDirectoryToPath(f) + "'><td class='filename-td'>" + _filenameToIconNameFormat(f) + "</td><td>" + _filenameToKind(f) + "</td></tr>";
     });
     body += "</tbody>"
     return header + body + "</table>";
@@ -114,12 +144,20 @@ _filenameToIconNameFormat = function(filename) {
     }
 }
 
+/* assumes current directory has trailing / and directory doesn't have beginning / but does have trailing / */
 _appendCurrentDirectoryToPath = function(directory) {
-    console.log('not implemented');
+    console.log('appending: ' + mdfs.getCurrentDirectory());
+    return mdfs.getCurrentDirectory() + directory;
 }
 
 _createIcon = function(iconName) {
     return "<i class='file-icon pe-7s-" + iconName + "'></i>"
 }
 
+_stripTrailingSlash = function(string) {
+    if (string.slice(-1) == "/") {
+        return string.slice(0, - 1);
+    }
+    return string;
+}
 })(jQuery);
