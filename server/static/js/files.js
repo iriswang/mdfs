@@ -80,8 +80,9 @@ $(document).ready(function() {
 	        scriptCharset: "utf-8",
 	        success: function(data){
 	        	console.log(data);
-	            console.log("file upload complete!");
-	            //$("#status1").append("File upload Done<br>");           
+	        	if (data.success == true) {
+	        		console.log("YAYYYYYY file upload complete!");
+	        	}         
 	        }
 	    }); 
 	    // status.setAbort(jqXHR);

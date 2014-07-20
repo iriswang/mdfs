@@ -59,13 +59,15 @@ mdfs.ls = function(path, filenames){
     console.log(filenames);
     $(".directory-container").html(_lsHTML(filenames));
     $(".table-row").click(function() {
-
+        console.log('STFU');
         // for each row add current directory to newPath
         var newPath = $(this).data("cd");
 
         if (_filenameToKind($(this).data('filename')) == 'document') {
-            mdfs.downloadFile(mdfs.getCurrentDirectory(), $(this).data('filename'));
+            console.log('fuck');
+            mdfs.downloadFile(newPath);
         } else {
+            console.log('file fuck it');
             mdfs.cd(newPath);
         }
         
@@ -108,8 +110,10 @@ mdfs.setNavToCurrentDirectory = function(path) {
     });
 }
 
-mdfs.downloadFile = function(path, filename) {
-    var data = {path: path, filename: filename};
+mdfs.downloadFile = function(link) {
+    window.open('/download?path='+link, "_blank")
+    return;
+    var data = {path: link};
     $.ajax({
         type: "GET",
         url: "/download",

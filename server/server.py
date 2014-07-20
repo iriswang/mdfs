@@ -1,7 +1,7 @@
 """
 MDFS
 """
-import os, logging
+import os, logging, json
 
 from flask import render_template,send_file
 from flask import make_response
@@ -13,7 +13,7 @@ from redis import Redis
 from fs import DB_NUM
 from chunker import split_bytes_into_chunks, allocate_chunks_to_service
 
-r_server = Redis(DB_NUM)
+r_server = Redis(db=DB_NUM)
 
 import requests
 from urlparse import urlparse
@@ -316,13 +316,19 @@ def upload_file():
                 # TODO (SHARAD) this writes file to uploads
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 inode = app.fs.get_inode(path, root_inode)
-                app.fs.create(path+"/"+filename, root_inode)
-                new_inode = app.fs.get_inode(path + "/" + filename, root_inode)
-                data = open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb').read()
-                chunks = split_bytes_into_chunks(data)
-                chunk_dump = allocate_chunks_to_service(chunks, new_inode.id)
-                r_server.set("inode_"+str(new_inode.id), json.dumps(chunk_dump))
-                return jsonify({JSON_SUCCESS: True})
+                try:
+                    app.fs.getattr(path+"/"+filename, root_inode)
+                except:
+                    app.fs.create(path+"/"+filename, root_inode)
+                    new_inode = app.fs.get_inode(path + "/" + filename, root_inode)
+                    data = bytearray(open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb').read())
+                    chunks = split_bytes_into_chunks(data)
+                    print chunks
+                    chunk_dump = allocate_chunks_to_service(chunks, new_inode.id)
+                    print json.dumps(chunk_dump)
+                    print "REDIS", "inode_"+str(new_inode.id)
+                    r_server.set("inode_"+str(new_inode.id), json.dumps(chunk_dump))
+                    return jsonify({JSON_SUCCESS: True})
         return jsonify({JSON_SUCCESS: False})
     except Exception as e:
         print str(e)
@@ -337,7 +343,7 @@ def download_file():
             root_inode = int(get_inode(request))
             inode = app.fs.get_inode(path, root_inode)
             info = app.fs.getattr(path, root_inode)
-            print "INFO", info
+            print "READING", path, info[1], 0
             data = app.fs.read(path, info[1], 0, root_inode, None)
             io = cStringIO.StringIO(data)
             return send_file(io, as_attachment=True, attachment_filename=inode.name)

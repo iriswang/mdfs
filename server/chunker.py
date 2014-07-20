@@ -60,6 +60,7 @@ def get_chunks(chunk_list, access_tokens, inode_id):
 def allocate_chunks_to_service(chunks, inode_id, n=2):
     chunk_store = []
     for chunk in chunks:
+        print "CHUNK", chunk.data
         mc.set('inode_' + str(inode_id) + 'index_' + str(chunk.index), chunk.data)
         nodes = get_nodes(chunk, {"facebook": None, "dropbox": None, "imgur": None, "soundcloud": None}, REDUNDANCY)
         for node in nodes:
@@ -72,6 +73,7 @@ def allocate_chunks_to_service(chunks, inode_id, n=2):
             if c.offset == chunk.offset:
                 chunk.info[node.name] = c.info[node.name]
     chunk_dump = map(lambda chunk: chunk.dump(), chunks)
+    print "CHUNK_DUMP", chunk_dump
     return chunk_dump
 
 pool = mp.Pool(10)
