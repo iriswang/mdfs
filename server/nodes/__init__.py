@@ -33,6 +33,9 @@ def get_nodes(chunk, access_tokens, n=2):
             nodes.append(SERVICE_MAP[service](access_tokens[service]))
     return nodes
 
+def get_node(service):
+    return SERVICE_MAP[service]
+
 def init_nodes(redis, access_tokens, user_id):
     for service, _ in SERVICES:
         result = redis.get("%s_%s_initializated" % (user_id, service))
