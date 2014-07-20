@@ -27,14 +27,20 @@ def split_bytes_into_chunks(bytes):
 def put_chunk(chunk_store):
     node, chunk = chunk_store
     print "PUTTING", node, chunk
-    node.put_chunk_data(chunk)
+    try:
+        node.put_chunk_data(chunk)
+    except:
+        logging.exception("put failed")
     return (node, chunk)
 
 
 def get_chunk(chunk_store):
     node, chunk = chunk_store
     print node, chunk
-    node.get_chunk_data(chunk)
+    try:
+        node.get_chunk_data(chunk)
+    except:
+        logging.exception("get failed")
     return (node, chunk)
 
 def get_chunks(chunk_list, access_tokens, inode_id):
@@ -52,7 +58,7 @@ def get_chunks(chunk_list, access_tokens, inode_id):
         mc.set('inode_' + str(inode_id) + 'index_' + str(chunk.index), chunk.data)
         for node, c in dump:
             print "LOPING", node, c
-            if c.offset == chunk.offset:
+            if node.name in chunk.info and c.offset == chunk.offset:
                 chunk.data = c.data
     return chunk_list
 
@@ -69,7 +75,7 @@ def allocate_chunks_to_service(chunks, inode_id, n=2):
     print "DUMP", dump
     for chunk in chunks:
         for node, c in dump:
-            if c.offset == chunk.offset:
+            if node.name in chunk.info and c.offset == chunk.offset:
                 chunk.info[node.name] = c.info[node.name]
     chunk_dump = map(lambda chunk: chunk.dump(), chunks)
     print "CHUNK_DUMP", chunk_dump
