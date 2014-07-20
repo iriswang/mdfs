@@ -1,5 +1,6 @@
+import urllib2
 import numpy as np
-import StringIO
+import cStringIO
 from node import Node
 from scipy.misc import imread, imsave
 import base64
@@ -7,6 +8,10 @@ import json
 import requests
 
 from base64 import b64encode
+
+URL = "https://api.imgur.com/3/upload.json"
+
+ZELDA = imread('nodes/img/zelda.png').flatten().tolist()
 
 class ImgurNode(Node):
 
@@ -18,24 +23,16 @@ class ImgurNode(Node):
 
     def put_chunk_data(self, chunk):
         image = [ord(x) for x in chunk.data]
-        zelda = imread('nodes/img/zelda.png').flatten().tolist()
         if (len(chunk.data) < 10240):
             image.extend([0] * (10240 - len(chunk.data)))
 
-        new_img =  [x + y for x, y in zip(zelda, image)]
-        new_img =  [x - 255 if x > 255 else x for x in new_img]
-        io_image = StringIO.StringIO()
-        imsave(io_image, np.array(new_img).reshape((80, 128)))
-        print "does it get this far??\n\n\n"
-        # test_img = imread('nodes/img/test.png').flatten().tolist()
-        # test_img =  [x - y for x, y in zip(test_img, image)]
-        # test_img =  [x + 255 if x < 0 else x for x in test_img]
-        # imsave('nodes/img/test2.png', np.array(test_img).reshape((80, 128)))
+        new_img =  [x ^ y for x, y in zip(ZELDA, image)]
+        io_image = cStringIO.StringIO()
+        imsave(io_image, np.array(new_img).reshape((80, 128)), format='png')
 
-        headers = {"Authorization": "Client-ID " + client_id}
-        url = "https://api.imgur.com/3/upload.json"
-        j1 = requests.post(
-            url, 
+        headers = {"Authorization": "Client-ID " + self.client_id}
+        result = requests.post(
+            URL,
             headers = headers,
             data = {
                 'image': b64encode(io_image.getvalue()),
@@ -44,4 +41,16 @@ class ImgurNode(Node):
                 'title': 'First Test'
             }
         )
-        print j1
+        chunk.update_info("imgur", {
+            "link": result.json()['data']['link']
+        })
+        self.get_chunk_data(chunk)
+
+
+    def get_chunk_data(self, chunk):
+        link = chunk.info['imgur']['link']
+        img = cStringIO.StringIO(urllib2.urlopen(link).read())
+        new_img = imread(img).flatten().tolist()
+        new_img =  [x ^ y for x, y in zip(new_img, ZELDA)]
+        new_img = new_img[:chunk.size]
+        chunk.data = bytearray(new_img)
