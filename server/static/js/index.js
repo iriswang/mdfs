@@ -1,8 +1,6 @@
 $(document).ready(function() {
 	console.log("go team mdfs");
 
-
-
 	var DROPBOX_APP_KEY = "lrbb9ssu70c3qdb";
 	var SOUNDCLOUD_CLIENT_ID = "d3d8d0b3e2db7a1085678bd9478024dd";
 
@@ -40,6 +38,7 @@ $(document).ready(function() {
 	}
 
 	$(".soundcloud-login").click(function() {
+		console.log('soundcloud-login');
 		soundcloudLogin();
 	});
 

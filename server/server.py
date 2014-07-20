@@ -292,19 +292,19 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # def allowed_file(filename):
 #     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
-@app.route('/upload', methods=['GET', 'POST'])
+@app.route('/upload', methods=['POST'])
 def upload_file():
     try:
         if request.method == 'POST':
+            path = request.args['path']
             f = request.files['file']
-            # f = request.files['xhr2upload'] # [0]
             # if f and allowed_file(f.filename) <-- lol security amirite:
             if f:
                 filename = secure_filename(f.filename)
 
                 # TODO (SHARAD) this writes file to uploads
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                print filename
+                
                 return jsonify({JSON_SUCCESS: True})
         return jsonify({JSON_SUCCESS: False})
     except Exception as e:
