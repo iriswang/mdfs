@@ -8,3 +8,6 @@ class Node:
 
     def put_chunk_data(self, data):
         raise NotImplementedError
+
+    def init(self, *args):
+        pass

@@ -3,7 +3,7 @@ import logging
 logger = mp.log_to_stderr()
 logging.basicConfig(level=logging.DEBUG)
 
-from nodes import get_nodes, Chunk
+from nodes import get_nodes, Chunk, init_nodes
 
 CHUNK_SIZE = 10240
 REDUNDANCY = 2
@@ -30,17 +30,18 @@ def put_chunk(chunk_store):
 def allocate_chunks_to_service(chunks, n=2):
     chunk_store = []
     for chunk in chunks:
-        nodes = get_nodes(chunk, REDUNDANCY)
+        nodes = get_nodes(chunk, {"facebook": None, "dropbox": None, "imgur": None}, REDUNDANCY)
         for node in nodes:
             chunk_store.append((node, chunk))
     dump = pool.map(put_chunk, chunk_store)
     chunk_dump = map(lambda chunk_store: chunk_store[1].dump(), dump)
-    print chunk_dump
+    return chunk_dump
 
 pool = mp.Pool(10)
 
 
 if __name__ == "__main__":
+    #init_nodes({}, 5)
     data = open('nodes/img/link.jpg', 'rb').read()
     chunks = split_bytes_into_chunks(data)
-    allocate_chunks_to_service(chunks)
+    print allocate_chunks_to_service(chunks)
