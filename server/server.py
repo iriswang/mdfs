@@ -9,6 +9,10 @@ from flask import Flask, request, jsonify, redirect, url_for
 from auth import Authenticator
 from functools import wraps
 from fs import FileSystem
+from redis import Redis
+from fs import DB_NUM
+
+r_server = Redis(DB_NUM)
 
 import requests
 from urlparse import urlparse
@@ -308,7 +312,11 @@ def upload_file():
 
                 # TODO (SHARAD) this writes file to uploads
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                
+                inode = fs.get_inode(path)
+                data = open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb').read()
+                chunks = split_bytes_into_chunks(data)
+                chunk_dump = allocate_chunks_to_service(chunks)
+                r_server.set("inode_"+str(inode.id), json.dumps(chunk_dump))
                 return jsonify({JSON_SUCCESS: True})
         return jsonify({JSON_SUCCESS: False})
     except Exception as e:
