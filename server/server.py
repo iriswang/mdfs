@@ -3,7 +3,7 @@ MDFS
 """
 import os, logging
 
-from flask import render_template
+from flask import render_template,send_file
 from flask import make_response
 from flask import Flask, request, jsonify, redirect, url_for
 from auth import Authenticator
@@ -20,6 +20,7 @@ from urlparse import urlparse
 from werkzeug import url_decode
 from werkzeug import secure_filename
 from base64 import b64encode, b64decode
+import cStringIO
 
 app = Flask(__name__, static_url_path='')
 
@@ -326,6 +327,26 @@ def upload_file():
     except Exception as e:
         print str(e)
         return jsonify({JSON_SUCCESS: False})
+
+@app.route('/download', methods=['get'])
+def download_file():
+    try:
+        if request.method == 'GET':
+            path = request.args['path']
+            print "PATH", path
+            root_inode = int(get_inode(request))
+            inode = app.fs.get_inode(path, root_inode)
+            info = app.fs.getattr(path, root_inode)
+            print "INFO", info
+            data = app.fs.read(path, info[1], 0, root_inode, None)
+            io = cStringIO.StringIO(data)
+            return send_file(io, as_attachment=True, attachment_filename=inode.name)
+
+        return jsonify({JSON_SUCCESS: False})
+    except Exception as e:
+        print str(e)
+        return jsonify({JSON_SUCCESS: False})
+
 
 
 if __name__ == '__main__':
