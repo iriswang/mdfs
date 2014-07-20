@@ -254,6 +254,8 @@ class FileSystem:
 
     def get_inode(self, path, root_inode_id):
         print "GETTING INODE", path, root_inode_id
+        if path[-1] == "/":
+            path = path[:-1]
         session = self.session()
         path_parts = split_path(path)
         curr_inode = None
